@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace O
+namespace OneClickDesktop.VirtualizationServer
 {
     class Program
     {
