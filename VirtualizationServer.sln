@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualizationServer", "VirtualizationServer\VirtualizationServer.csproj", "{CCD53EEE-D8A8-456D-9F9A-8CB7683414D2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FE584FD1-527A-4CBB-ABB1-B702F2838A88}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{B3C3BA1A-3186-4E55-8993-B85487F77C25}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CCD53EEE-D8A8-456D-9F9A-8CB7683414D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCD53EEE-D8A8-456D-9F9A-8CB7683414D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCD53EEE-D8A8-456D-9F9A-8CB7683414D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCD53EEE-D8A8-456D-9F9A-8CB7683414D2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CCD53EEE-D8A8-456D-9F9A-8CB7683414D2} = {FE584FD1-527A-4CBB-ABB1-B702F2838A88}
+	EndGlobalSection
+EndGlobal
