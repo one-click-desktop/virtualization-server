@@ -10,7 +10,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
     { }
     
     /// <summary>
-    /// Nieznany błąd w czasie działąnia vagranta
+    /// Nieznany błąd w czasie działania vagranta
     /// </summary>
     public class UnknownException: VagrantUpException { }
     

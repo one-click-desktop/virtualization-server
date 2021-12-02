@@ -26,8 +26,11 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         public string FormatForExecute()
         {
             StringBuilder str = new StringBuilder();
-            
-            
+
+            str.Append($"--vm-name={BoxName}");str.Append(" ");
+            str.Append($"--cpus={CpuCores}");str.Append(" ");
+            str.Append($"--memory={Memory}");str.Append(" ");
+            str.Append($"--hostname={Hostname}");
             
             return str.ToString();
         }
