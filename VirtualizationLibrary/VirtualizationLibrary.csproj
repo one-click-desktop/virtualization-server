@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <AssemblyName>OneClickDesktop.VirtualizationLibrary</AssemblyName>
+        <RootNamespace>OneClickDesktop.VirtualizationLibrary</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="Vagrantfile" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="res\Vagrantfile">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </AdditionalFiles>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Libvirt" />
+      <Folder Include="Vagrant" />
+    </ItemGroup>
+
+</Project>

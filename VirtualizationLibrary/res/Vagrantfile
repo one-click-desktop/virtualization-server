@@ -1,0 +1,35 @@
+# -*- mode: ruby -*-
+
+# Plik zajmuje sie tworzeniem maszyn na rzadanie VagrantWrappera
+
+require 'getoptlong'
+
+opts = GetoptLong.new(
+  [ '--vm-name',        GetoptLong::REQUIRED_ARGUMENT ],
+)
+vm_name        = ENV['VM_NAME'] || 'default'
+
+begin
+  opts.each do |opt, arg|
+    case opt
+      when '--vm-name'
+        vm_name = arg
+    end
+  end
+  rescue
+end
+
+Vagrant.configure(2) do |config|
+  config.vm.define vm_name
+  config.vm.hostname = vm_name
+  config.vm.box = "generic/alpine38"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.title = vm_name
+    libvirt.host = "example.com"
+    libvirt.memory = 1024
+    libvirt.cpus = 2
+    libvirt.uri = "qemu:///system"
+  end
+
+end
