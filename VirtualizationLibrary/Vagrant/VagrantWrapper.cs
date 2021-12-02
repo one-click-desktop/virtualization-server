@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace OneClickDesktop.VirtualizationLibrary.Vagrant
@@ -18,31 +20,76 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             vagrantfilePath = filepath;
         }
 
-        private (int, string) RunCommand(string command)
+        private (int, string) RunCommand(ProcessStartInfo startInfo)
         {
-            ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = command,  }; 
             Process proc = new Process() { StartInfo = startInfo, };
             proc.Start();
             proc.WaitForExit();
-            return (proc.ExitCode, proc.StandardOutput.ReadToEnd());
+            string output = proc.StandardError.ReadToEnd() + proc.StandardOutput.ReadToEnd();
+            
+            return (proc.ExitCode, output);
         }
         
-        public void VagrantUp(VagrantUpParameters parameters)
+        public void VagrantUp(VagrantParameters parameters)
         {
-            (int code, string output) = RunCommand($"VAGRANT_VAGRANTFILE={vagrantfilePath} vagrant {parameters.FormatForExecute()} up");
+            ProcessStartInfo startInfo =
+                new ProcessStartInfo()
+                {
+                    FileName = "/bin/bash",
+                    ArgumentList = { "-c", "vagrant up" },
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+            startInfo.EnvironmentVariables["VAGRANT_VAGRANTFILE"] = vagrantfilePath;
+            startInfo.EnvironmentVariables["OCD_BOX_NAME"] = parameters.VagrantBox;
+            startInfo.EnvironmentVariables["OCD_VM_NAME"] = parameters.BoxName;
+            startInfo.EnvironmentVariables["OCD_CPUS"] = parameters.CpuCores.ToString();
+            startInfo.EnvironmentVariables["OCD_MEMORY"] = parameters.Memory.ToString();
+            startInfo.EnvironmentVariables["OCD_HOSTNAME"] = parameters.Hostname;
+            
+            (int code, string output) = RunCommand(startInfo);
             
             //Kody bledow odnalezc w zrodle vagranta. Rozpoczac badanie tutaj: https://github.com/hashicorp/vagrant/blob/main/lib/vagrant/errors.rb
             switch (code)
             {
                 case 0:
                     return;
+                case 127:
+                    throw new BadArgumentsException(output);
                 case 255:
                 default:
                     //TODO: Dodac logi
                     Console.Error.Write(output);
-                    throw new UnknownException();
+                    throw new UnknownException(output);
                     break;
             }
+        }
+
+        public void VagrantDestroy(VagrantParameters parameters)
+        {
+            ProcessStartInfo startInfo =
+                new ProcessStartInfo()
+                {
+                    FileName = "/bin/bash",
+                    ArgumentList = { "-c", "vagrant destroy -f" },
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+            startInfo.EnvironmentVariables["VAGRANT_VAGRANTFILE"] = vagrantfilePath;
+            startInfo.EnvironmentVariables["OCD_BOX_NAME"] = parameters.VagrantBox;
+            startInfo.EnvironmentVariables["OCD_VM_NAME"] = parameters.BoxName;
+            startInfo.EnvironmentVariables["OCD_CPUS"] = parameters.CpuCores.ToString();
+            startInfo.EnvironmentVariables["OCD_MEMORY"] = parameters.Memory.ToString();
+            startInfo.EnvironmentVariables["OCD_HOSTNAME"] = parameters.Hostname;
+            
+            (int code, string output) = RunCommand(startInfo);
+
+            if (code > 0)
+                throw new UnknownException();
         }
     }
 }

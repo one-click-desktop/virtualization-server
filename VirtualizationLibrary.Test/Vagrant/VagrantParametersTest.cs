@@ -3,7 +3,7 @@ using OneClickDesktop.VirtualizationLibrary.Vagrant;
 
 namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
 {
-    public class VagrantUpParametersTest
+    public class VagrantParametersTest
     {
         [TestCase]
         public void TestFormatForExecute()
@@ -12,9 +12,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             string hostname = "test_hostname";
             int cpus = 6;
             int memory = 1234;
-            var p = new VagrantUpParameters(vm_name, hostname, memory, cpus);
+            string box = "generic/alpine38";
+            var p = new VagrantParameters(box, vm_name, hostname, memory, cpus);
 
-            string expected = $"--vm-name={vm_name} --cpus={cpus} --memory={memory} --hostname={hostname}";
+            string expected = $"--boxname=\"{box}\" --vm-name=\"{vm_name}\" --cpus=\"{cpus}\" --memory=\"{memory}\" --hostname=\"{hostname}\"";
             string ret = p.FormatForExecute();
             
             StringAssert.AreEqualIgnoringCase(expected, ret);

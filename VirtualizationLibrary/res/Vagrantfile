@@ -6,6 +6,7 @@ require 'getoptlong'
 
 #Definition for cli arguments
 opts = GetoptLong.new(
+  [ '--boxname',        GetoptLong::REQUIRED_ARGUMENT ],
   [ '--vm-name',        GetoptLong::REQUIRED_ARGUMENT ],
   [ '--cpus',        GetoptLong::REQUIRED_ARGUMENT ],
   [ '--memory',        GetoptLong::REQUIRED_ARGUMENT ],
@@ -13,6 +14,7 @@ opts = GetoptLong.new(
 )
 
 #Default values or taken from environment
+boxname        = ENV['OCD_BOX_NAME'] || 'random_box_generate_error' + (0...8).map { (65 + rand(26)).chr }.join
 vm_name        = ENV['OCD_VM_NAME'] || 'default'
 cpus           = ENV['OCD_CPUS'] || 1
 memory         = ENV['OCD_MEMORY'] || 512
@@ -30,6 +32,8 @@ begin
         memory = arg
       when '--hostname'
         hostname = arg
+      when '--boxname'
+        boxname = arg
     end
   end
   rescue
@@ -39,9 +43,10 @@ end
 Vagrant.configure(2) do |config|
   config.vm.define vm_name
   config.vm.hostname = vm_name
-  config.vm.box = "generic/alpine38"
+  config.vm.box = boxname
 
   config.vm.provider :libvirt do |libvirt|
+    libvirt.default_prefix = ""
     libvirt.title = vm_name
     libvirt.host = "example.com"
     libvirt.memory = memory
