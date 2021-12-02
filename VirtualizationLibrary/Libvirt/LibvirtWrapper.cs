@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OneClickDesktop.VirtualizationLibrary
+namespace OneClickDesktop.VirtualizationLibrary.Libvirt
 {
     /// <summary>
     /// Klasa zajmuje się komunikacją z libvirtem i udostepnia interfejs dla VirtualizationManagera.

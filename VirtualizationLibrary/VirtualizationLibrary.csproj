@@ -17,8 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Libvirt" />
-      <Folder Include="Vagrant" />
+      <PackageReference Include="IDNT.AppBasics.Virtualization.Libvirt" Version="1.0.9" />
     </ItemGroup>
 
 </Project>
