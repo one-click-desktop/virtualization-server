@@ -1,0 +1,3 @@
+[submodule "AppBasics-Virtualization-Libvirt"]
+	path = AppBasics-Virtualization-Libvirt
+	url = https://github.com/one-click-desktop/AppBasics-Virtualization-Libvirt
