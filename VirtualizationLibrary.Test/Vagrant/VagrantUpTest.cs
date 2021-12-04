@@ -31,7 +31,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             wrap.VagrantUp(para);
 
             //Check
-            bool check = helper.IsRunningVm(para.BoxName);
+            bool check = helper.IsRunningVm(para.GetParameter(typeof(NameParameter)));
 
             //Cleanup
             wrap.VagrantDestroy(para);

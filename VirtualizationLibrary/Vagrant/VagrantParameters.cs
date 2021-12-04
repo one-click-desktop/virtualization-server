@@ -1,48 +1,145 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
 namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 {
-    public class VagrantParameters
+    public abstract class AbstractParameter
     {
-        public string BoxName { get; set; }
-        public string Hostname { get; set; }
-        public int Memory { get; set; }
-        public int CpuCores { get; set; }
-        public string VagrantBox { get; set; }
+        protected const string ENV_PREFIX = "OCD_";
+        protected const string CONSOLE_PREFIX = "--";
 
-        public VagrantParameters(string vagrantBox, string name, string hostname, int memory, int cpus)
+        public virtual string EnvironmentVariable => ENV_PREFIX + envSuffix;
+        public virtual string ConsoleParameter => CONSOLE_PREFIX + cliSuffix;
+
+        public string Value => value;
+
+        protected string value;
+        protected string envSuffix;
+        protected string cliSuffix;
+
+        public AbstractParameter(string value, string envSuffix, string cliSuffix)
         {
-            VagrantBox = vagrantBox;
-            BoxName = name;
-            Hostname = hostname;
-            Memory = memory;
-            CpuCores = cpus;
+            this.value = value;
+            this.envSuffix = envSuffix;
+            this.cliSuffix = cliSuffix;
         }
 
+        public virtual void SetEnironmentalVariable(StringDictionary env)
+        {
+            env[EnvironmentVariable] = value;
+        }
+        
+        public virtual string FormatConsoleParameter()
+        {
+            return $"{ConsoleParameter}={value}";
+        }
+    }
+
+    public class BoxNameParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "BOXNAME";
+        public const string CLI_SUFFIX = "boxname";
+
+        public BoxNameParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+    
+    public class NameParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "VMNAME";
+        public const string CLI_SUFFIX = "vm-name";
+
+        public NameParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+    
+    public class CpusParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "CPUS";
+        public const string CLI_SUFFIX = "cpus";
+
+        public CpusParameter(int value) : base(value.ToString(), ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+    
+    public class MemoryParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "MEMORY";
+        public const string CLI_SUFFIX = "memory";
+
+        public MemoryParameter(int value) : base(value.ToString(), ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+    
+    public class HostnameParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "HOSTNAME";
+        public const string CLI_SUFFIX = "hostname";
+
+        public HostnameParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+
+    public class VagrantParameters
+    {
+        private List<AbstractParameter> parameters;
+        
+        public VagrantParameters()
+        {
+            parameters = new List<AbstractParameter>();
+        }
+
+        public VagrantParameters(string boxName, string name, string hostname, int memory, int cpus)
+        {
+            parameters = new List<AbstractParameter>()
+            {
+                new BoxNameParameter(boxName),
+                new NameParameter(name),
+                new HostnameParameter(hostname),
+                new CpusParameter(cpus),
+                new MemoryParameter(memory)
+            };
+        }
+
+        public void AddParameter(AbstractParameter parameter)
+        {
+            parameters.Add(parameter);
+        }
+
+        public string GetParameter(Type parameterType)
+        {
+            return parameters.First(p => p.GetType() == parameterType)?.Value ?? "";
+        }
+        
         public override string ToString()
         {
             return JsonSerializer.Serialize<VagrantParameters>(this);
         }
-
-        private void AppendParameter(StringBuilder str, string name, string val, bool TrailingSpace = true)
-        {
-            str.Append($"--{name}=\"{val}\"");
-            if (TrailingSpace)
-                str.Append(" ");
-        }
-
+        
         public string FormatForExecute()
         {
             StringBuilder str = new StringBuilder();
-            
-            AppendParameter(str, "boxname", VagrantBox);
-            AppendParameter(str, "vm-name", BoxName);
-            AppendParameter(str, "cpus", CpuCores.ToString());
-            AppendParameter(str, "memory", Memory.ToString());
-            AppendParameter(str, "hostname", Hostname, false);
+
+            int counter = 0;
+            foreach (AbstractParameter parameter in parameters)
+            {
+                str.Append(parameter.FormatConsoleParameter());
+                counter++;
+                if (counter < parameters.Count)
+                    str.Append(" ");
+            }
 
             return str.ToString();
+        }
+
+        public void DefineEnvironmentalVariables(StringDictionary env)
+        {
+            foreach (AbstractParameter parameter in parameters)
+                parameter.SetEnironmentalVariable(env);
         }
     }
 }

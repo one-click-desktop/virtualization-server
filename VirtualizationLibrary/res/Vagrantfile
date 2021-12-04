@@ -14,8 +14,8 @@ opts = GetoptLong.new(
 )
 
 #Default values or taken from environment
-boxname        = ENV['OCD_BOX_NAME'] || 'random_box_generate_error' + (0...8).map { (65 + rand(26)).chr }.join
-vm_name        = ENV['OCD_VM_NAME'] || 'default'
+boxname        = ENV['OCD_BOXNAME'] || 'random_box_generate_error' + (0...8).map { (65 + rand(26)).chr }.join
+vm_name        = ENV['OCD_VMNAME'] || 'default'
 cpus           = ENV['OCD_CPUS'] || 1
 memory         = ENV['OCD_MEMORY'] || 512
 hostname       = ENV['OCD_HOSTNAME'] || vm_name

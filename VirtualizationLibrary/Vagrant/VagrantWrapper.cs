@@ -25,71 +25,59 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             Process proc = new Process() { StartInfo = startInfo, };
             proc.Start();
             proc.WaitForExit();
-            string output = proc.StandardError.ReadToEnd() + proc.StandardOutput.ReadToEnd();
+            string stderr = proc.StandardError.ReadToEnd();
             
-            return (proc.ExitCode, output);
+            return (proc.ExitCode, stderr);
         }
-        
-        public void VagrantUp(VagrantParameters parameters)
+
+        private ProcessStartInfo PrepareForVagrantCommand(string command, VagrantParameters parameters)
         {
             ProcessStartInfo startInfo =
                 new ProcessStartInfo()
                 {
                     FileName = "/bin/bash",
-                    ArgumentList = { "-c", "vagrant up" },
+                    ArgumentList = { "-c", command },
                     UseShellExecute = false,
-                    RedirectStandardOutput = true,
+                    RedirectStandardOutput = false,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
             startInfo.EnvironmentVariables["VAGRANT_VAGRANTFILE"] = vagrantfilePath;
-            startInfo.EnvironmentVariables["OCD_BOX_NAME"] = parameters.VagrantBox;
-            startInfo.EnvironmentVariables["OCD_VM_NAME"] = parameters.BoxName;
-            startInfo.EnvironmentVariables["OCD_CPUS"] = parameters.CpuCores.ToString();
-            startInfo.EnvironmentVariables["OCD_MEMORY"] = parameters.Memory.ToString();
-            startInfo.EnvironmentVariables["OCD_HOSTNAME"] = parameters.Hostname;
-            
-            (int code, string output) = RunCommand(startInfo);
-            
+            parameters.DefineEnvironmentalVariables(startInfo.EnvironmentVariables);
+
+            return startInfo;
+        }
+
+        private void CheckErrors(int code, string stderr)
+        {
             //Kody bledow odnalezc w zrodle vagranta. Rozpoczac badanie tutaj: https://github.com/hashicorp/vagrant/blob/main/lib/vagrant/errors.rb
             switch (code)
             {
                 case 0:
                     return;
+                case 1:
+                    throw new VagrantException(stderr);
                 case 127:
-                    throw new BadArgumentsException(output);
+                    throw new BadArgumentsException(stderr);
                 case 255:
                 default:
                     //TODO: Dodac logi
-                    Console.Error.Write(output);
-                    throw new UnknownException(output);
+                    Console.Error.Write(stderr);
+                    throw new UnknownException(stderr);
                     break;
             }
+        }
+        
+        public void VagrantUp(VagrantParameters parameters)
+        {
+            (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant up", parameters));
+            CheckErrors(code, stderr);
         }
 
         public void VagrantDestroy(VagrantParameters parameters)
         {
-            ProcessStartInfo startInfo =
-                new ProcessStartInfo()
-                {
-                    FileName = "/bin/bash",
-                    ArgumentList = { "-c", "vagrant destroy -f" },
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-            startInfo.EnvironmentVariables["VAGRANT_VAGRANTFILE"] = vagrantfilePath;
-            startInfo.EnvironmentVariables["OCD_BOX_NAME"] = parameters.VagrantBox;
-            startInfo.EnvironmentVariables["OCD_VM_NAME"] = parameters.BoxName;
-            startInfo.EnvironmentVariables["OCD_CPUS"] = parameters.CpuCores.ToString();
-            startInfo.EnvironmentVariables["OCD_MEMORY"] = parameters.Memory.ToString();
-            startInfo.EnvironmentVariables["OCD_HOSTNAME"] = parameters.Hostname;
-            
-            (int code, string output) = RunCommand(startInfo);
-
-            if (code > 0)
-                throw new UnknownException();
+            (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant destroy -f", parameters));
+            CheckErrors(code, stderr);
         }
     }
 }

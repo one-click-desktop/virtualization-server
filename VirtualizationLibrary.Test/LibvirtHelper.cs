@@ -13,18 +13,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Test
             con = LibvirtConnection.Create.WithLocalAuth().WithMetricsDisabled().Connect();
         }
 
-        private LibvirtDomain GetVmByName(string name)
-        {
-            foreach (var domain in con.Domains)
-                if (domain.Name == name)
-                    return domain;
-            return null;
-        }
-
         public bool IsRunningVm(string name)
         {
-            var dom = GetVmByName(name);
-            return dom?.IsActive ?? false;
+            LibvirtDomain dom = con.GetDomainByName(name);
+            return dom.IsActive;
         }
 
         public void Dispose()

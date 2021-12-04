@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using NUnit.Framework;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
 
@@ -6,7 +8,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
     public class VagrantParametersTest
     {
         [TestCase]
-        public void TestFormatForExecute()
+        public void EnvironmentParametrsSet()
         {
             string vm_name = "test_name";
             string hostname = "test_hostname";
@@ -15,10 +17,16 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             string box = "generic/alpine38";
             var p = new VagrantParameters(box, vm_name, hostname, memory, cpus);
 
-            string expected = $"--boxname=\"{box}\" --vm-name=\"{vm_name}\" --cpus=\"{cpus}\" --memory=\"{memory}\" --hostname=\"{hostname}\"";
-            string ret = p.FormatForExecute();
+            StringDictionary env = new StringDictionary();
+            env.Add("TEST", "TEST");
+            p.DefineEnvironmentalVariables(env);
             
-            StringAssert.AreEqualIgnoringCase(expected, ret);
+            StringAssert.AreEqualIgnoringCase(vm_name, env["OCD_VMNAME"]);
+            StringAssert.AreEqualIgnoringCase(hostname, env["OCD_HOSTNAME"]);
+            StringAssert.AreEqualIgnoringCase(box, env["OCD_BOXNAME"]);
+            StringAssert.AreEqualIgnoringCase(cpus.ToString(), env["OCD_CPUS"]);
+            StringAssert.AreEqualIgnoringCase(memory.ToString(), env["OCD_MEMORY"]);
+            StringAssert.AreEqualIgnoringCase("TEST", env["TEST"]);
         }
     }
 }

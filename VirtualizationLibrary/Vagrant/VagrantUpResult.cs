@@ -6,17 +6,17 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
     /// Błąd opisujący nieprawidlowe działania vagranta.
     /// Klasy pochodne opisują konkretne przypadki.
     /// </summary>
-    public class VagrantUpException : Exception
+    public class VagrantException : Exception
     {
-        public VagrantUpException()
+        public VagrantException()
         {
         }
 
-        public VagrantUpException(string? message) : base(message)
+        public VagrantException(string? message) : base(message)
         {
         }
 
-        public VagrantUpException(string? message, Exception? innerException) : base(message, innerException)
+        public VagrantException(string? message, Exception? innerException) : base(message, innerException)
         {
         }
     }
@@ -24,7 +24,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
     /// <summary>
     /// Nieznany błąd w czasie działania vagranta
     /// </summary>
-    public class UnknownException: VagrantUpException
+    public class UnknownException: VagrantException
     {
         public UnknownException()
         {
@@ -42,7 +42,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
     /// <summary>
     /// Nieznany błąd w czasie działąnia vagranta
     /// </summary>
-    public class BadArgumentsException: VagrantUpException
+    public class BadArgumentsException: VagrantException
     {
         public BadArgumentsException()
         {
@@ -60,10 +60,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
     /// <summary>
     /// Opisuje sytuację, gdy nie mozna połączyć sie z daemonem libvirta
     /// </summary>
-    public class LibvirtConnectionException: VagrantUpException { }
+    public class LibvirtConnectionException: VagrantException { }
     
     /// <summary>
     /// Opisuje systuacje, gdy brakuje w systemie skonfigurowanego firewalla
     /// </summary>
-    public class NetworkFirewallException: VagrantUpException { }
+    public class NetworkFirewallException: VagrantException { }
 }
