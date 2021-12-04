@@ -47,7 +47,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 
             return startInfo;
         }
-
+ 
         private void CheckErrors(int code, string stderr)
         {
             //Kody bledow odnalezc w zrodle vagranta. Rozpoczac badanie tutaj: https://github.com/hashicorp/vagrant/blob/main/lib/vagrant/errors.rb
@@ -71,7 +71,26 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         public void VagrantUp(VagrantParameters parameters)
         {
             (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant up", parameters));
-            CheckErrors(code, stderr);
+            
+            try
+            {
+                CheckErrors(code, stderr);
+            }
+            catch (VagrantException e)
+            {
+                //Sprobuj wyczyscic co sie da po blednym starcie maszyny
+                try
+                {
+                    VagrantDestroy(parameters);
+                }
+                catch (VagrantException)
+                {
+                    //Ignorujemy wyjatki z destroya - best effort
+                }
+
+                throw;
+            }
+            
         }
 
         public void VagrantDestroy(VagrantParameters parameters)

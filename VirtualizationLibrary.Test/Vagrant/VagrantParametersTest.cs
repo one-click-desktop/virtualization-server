@@ -7,7 +7,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
 {
     public class VagrantParametersTest
     {
-        [TestCase]
+        [Test]
         public void EnvironmentParametrsSet()
         {
             string vm_name = "test_name";

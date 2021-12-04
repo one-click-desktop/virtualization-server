@@ -23,5 +23,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
         {
             return new VagrantParameters("generic/alpine38", "testname", "testhostname", 512, 1234);
         }
+        
+        public static VagrantParameters InexistingBox()
+        {
+            return new VagrantParameters("auhoiuhgkuywqfriuywkweefduyw", "testname", "testhostname", 512, 2);
+        }
     }
 }

@@ -16,7 +16,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test
         public bool IsRunningVm(string name)
         {
             LibvirtDomain dom = con.GetDomainByName(name);
-            return dom.IsActive;
+            return dom?.IsActive ?? false;
         }
 
         public void Dispose()
