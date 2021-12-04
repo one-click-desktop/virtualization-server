@@ -421,3 +421,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+#vagrant files
+.vagrant/

@@ -1,0 +1,57 @@
+# -*- mode: ruby -*-
+
+# Plik zajmuje sie tworzeniem maszyn na rzadanie VagrantWrappera
+
+require 'getoptlong'
+
+#Definition for cli arguments
+opts = GetoptLong.new(
+  [ '--boxname',        GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--vm-name',        GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--cpus',        GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--memory',        GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--hostname',        GetoptLong::OPTIONAL_ARGUMENT ],
+)
+
+#Default values or taken from environment
+boxname        = ENV['OCD_BOXNAME'] || 'random_box_generate_error' + (0...8).map { (65 + rand(26)).chr }.join
+vm_name        = ENV['OCD_VMNAME'] || 'default'
+cpus           = ENV['OCD_CPUS'] || 1
+memory         = ENV['OCD_MEMORY'] || 512
+hostname       = ENV['OCD_HOSTNAME'] || vm_name
+
+#Parsing cli parameters
+begin
+  opts.each do |opt, arg|
+    case opt
+      when '--vm-name'
+        vm_name = arg
+      when '--cpus'
+        cpus = arg
+      when '--memory'
+        memory = arg
+      when '--hostname'
+        hostname = arg
+      when '--boxname'
+        boxname = arg
+    end
+  end
+  rescue
+end
+
+#Parametrized vagrant configuration
+Vagrant.configure(2) do |config|
+  config.vm.define vm_name
+  config.vm.hostname = vm_name
+  config.vm.box = boxname
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.default_prefix = ""
+    libvirt.title = vm_name
+    libvirt.host = "example.com"
+    libvirt.memory = memory
+    libvirt.cpus = cpus
+    libvirt.uri = "qemu:///system" # deprecha - serwery wirtualizacji wcale nie sa potrzebne
+  end
+
+end
