@@ -12,8 +12,14 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
         [SetUp]
         public void SetupWrapper()
         {
-            
+            string libvirtUri = "qemu:///system";
+            helper = new LibvirtHelper(libvirtUri);
             wrap = new VagrantWrapper("res/Vagrantfile");
+        }
+
+        ~VagrantUpTest()
+        {
+            helper.Dispose();
         }
         
         [TestCase]
@@ -23,14 +29,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             
             //Create machine
             wrap.VagrantUp(para);
-            
+
             //Check
-            //tutaj wazny szczegol - gdyby polaczenie trwalo caly czas dostaniemy wyjatek o zlym stanie odmeny
-            //Gdy laczymy sie zaraz przed sprawdzeniem to laczenie trwa kilka sekund, ale stany sie zgadzaja
-            string libvirtUri = "qemu:///system";
-            helper = new LibvirtHelper(libvirtUri);
             bool check = helper.IsRunningVm(para.BoxName);
-            
+
             //Cleanup
             wrap.VagrantDestroy(para);
             

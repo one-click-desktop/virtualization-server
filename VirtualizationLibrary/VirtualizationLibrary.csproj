@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="IDNT.AppBasics.Virtualization.Libvirt" Version="1.0.9" />
+      <ProjectReference Include="..\AppBasics-Virtualization-Libvirt\src\IDNT.AppBasics.Virtualization.Libvirt.csproj" />
     </ItemGroup>
 
 </Project>
