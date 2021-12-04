@@ -20,6 +20,12 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             vagrantfilePath = filepath;
         }
 
+        /// <summary>
+        /// Wykonuje polecenie systemowe zgodne z parametrami na wejściu.
+        /// Czeka do czasu zakończenia polecenia oraz wypisuje kod wykonania i stderr.
+        /// </summary>
+        /// <param name="startInfo">Parametry uruchomienia</param>
+        /// <returns>Kod wyjścia oraz zawartośc stderr jezeli ustawione aby przechwytywać.</returns>
         private (int, string) RunCommand(ProcessStartInfo startInfo)
         {
             Process proc = new Process() { StartInfo = startInfo, };
@@ -29,7 +35,13 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             
             return (proc.ExitCode, stderr);
         }
-
+        
+        /// <summary>
+        /// Przygotowuje parametry uruchomieniowe pod polecenia vagrant na Vagrantfile
+        /// </summary>
+        /// <param name="command">Polecenie do wykonania w bashu</param>
+        /// <param name="parameters">Parametry przekazywane do Vagrntfile</param>
+        /// <returns>Parametry uruchomieniowe procesu</returns>
         private ProcessStartInfo PrepareForVagrantCommand(string command, VagrantParameters parameters)
         {
             ProcessStartInfo startInfo =
@@ -47,7 +59,15 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 
             return startInfo;
         }
- 
+        
+        /// <summary>
+        /// Sprawdza błędy uruchomienia polecenia vagrantowego
+        /// </summary>
+        /// <param name="code">Kod wyjścia</param>
+        /// <param name="stderr">Zawartośc stderr</param>
+        /// <exception cref="VagrantException">Zgłąszany w wypadku błedu uruchomienia vagranta</exception>
+        /// <exception cref="BadArgumentsException">Zgłaszany w przypadku błedu składniowego polecenia</exception>
+        /// <exception cref="UnknownException">Zgłaszany w pozostałych przypadkach</exception>
         private void CheckErrors(int code, string stderr)
         {
             //Kody bledow odnalezc w zrodle vagranta. Rozpoczac badanie tutaj: https://github.com/hashicorp/vagrant/blob/main/lib/vagrant/errors.rb
@@ -68,6 +88,11 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             }
         }
         
+        /// <summary>
+        /// Wykonuje polecenie vagrant up tworzac maszyne o podanych parametrach.
+        /// W wypadku niepowodzenia staramy sie wyczyscic co sie da przy pomocy metody VagrantDestroy.
+        /// </summary>
+        /// <param name="parameters">Parametry uruchamianej maszyny</param>
         public void VagrantUp(VagrantParameters parameters)
         {
             (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant up", parameters));
@@ -92,7 +117,11 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             }
             
         }
-
+        
+        /// <summary>
+        /// Niszcze aktualnie działającą maszyne o podanych parametrach
+        /// </summary>
+        /// <param name="parameters">Parametry maszyny do zniszczenia</param>
         public void VagrantDestroy(VagrantParameters parameters)
         {
             (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant destroy -f", parameters));

@@ -31,13 +31,13 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             wrap.VagrantUp(para);
 
             //Check if exists
-            Assert.IsTrue(helper.IsRunningVm(para.GetParameter(typeof(NameParameter))));
+            Assert.IsTrue(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
 
             //Cleanup
             wrap.VagrantDestroy(para);
             
             //Check if doesnt exist
-            Assert.IsFalse(helper.IsRunningVm(para.GetParameter(typeof(NameParameter))));
+            Assert.IsFalse(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
         }
         
         [Test]
@@ -49,7 +49,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
 
             //Check if doesnt exist
-            Assert.IsFalse(helper.IsRunningVm(para.GetParameter(typeof(NameParameter))));
+            Assert.IsFalse(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
         }
         
         [Test]
@@ -61,7 +61,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
 
             //Check if doesnt exist
-            Assert.IsFalse(helper.IsRunningVm(para.GetParameter(typeof(NameParameter))));
+            Assert.IsFalse(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
         }
         
         [Test]
@@ -73,7 +73,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
 
             //Check if doesnt exist
-            Assert.IsFalse(helper.IsRunningVm(para.GetParameter(typeof(NameParameter))));
+            Assert.IsFalse(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
         }
         
         [Test]
@@ -85,7 +85,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
 
             //Check if doesnt exist
-            Assert.IsFalse(helper.IsRunningVm(para.GetParameter(typeof(NameParameter))));
+            Assert.IsFalse(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
         }
     }
 }
