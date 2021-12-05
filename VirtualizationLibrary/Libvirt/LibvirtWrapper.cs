@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using IDNT.AppBasics.Virtualization.Libvirt;
 
 namespace OneClickDesktop.VirtualizationLibrary.Libvirt
@@ -16,25 +17,21 @@ namespace OneClickDesktop.VirtualizationLibrary.Libvirt
         }
         
         public LibvirtDomain GetDomainByName(string name) => connection.GetDomainByName(name);
-        
-        public bool DoesDomainExist(string name)
+
+        public bool DoesDomainExist(string name) => GetDomainByName(name) != null;
+
+        public bool DoesDomainActive(string name) => GetDomainByName(name)?.IsActive ?? false;
+
+        public string GetDomainsNetworkAddress(string name, string cidrFilter)
         {
-            throw new NotImplementedException();
-        }
-        
-        public bool DoesDomainActive(string name)
-        {
-            throw new NotImplementedException();
+            //Rozpocząć szukanie od tego!
+            //https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddresses
+            return "";
         }
 
-        public string GetDomainsNetworkAddress(string name)
+        public void DestroyMachine(string name)
         {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteMachine(string name)
-        {
-            throw new NotImplementedException();
+            GetDomainByName(name)?.Destroy();
         }
 
         public void Dispose()

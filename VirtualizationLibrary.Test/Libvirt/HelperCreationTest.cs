@@ -24,18 +24,32 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
         }
 
         [Test]
-        public void CreateSimpleMachine()
+        public void CreateTransientMachine()
         {
             string name = "archtest-1";
-            XDocument definition = LibvirtHelper.GenerateMinimalMachine(name);
-            
-            helper.con.CreateDomain(definition);
+
+            var dom = helper.CreateTransientMachine(name);
             
             Assert.True(helper.IsRunningVm(name));
+
+            dom.Destroy();
             
-            helper.con.DestroyDomain(helper.con.GetDomainByName(name));
+            Assert.False(helper.Exists(name));
+        }
+        
+        [Test]
+        public void CreatePersistentMachine()
+        {
+            string name = "archtest-2";
+
+            var dom = helper.CreatePersistentMachine(name);
             
             Assert.False(helper.IsRunningVm(name));
+            Assert.True(helper.Exists(name));
+
+            dom.Undefine();
+            
+            Assert.False(helper.Exists(name));
         }
     }
 }

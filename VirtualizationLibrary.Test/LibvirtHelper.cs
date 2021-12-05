@@ -21,6 +21,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test
         }
 
         public bool IsRunningVm(string name) => con.GetDomainByName(name)?.IsActive ?? false;
+        public bool Exists(string name) => con.GetDomainByName(name) != null;
 
         public static XDocument GenerateMinimalMachine(string name, string archisoPath = "/tmp/arch.iso", string definitionPath = "res/archiso.xml")
         {
@@ -57,6 +58,32 @@ namespace OneClickDesktop.VirtualizationLibrary.Test
             return defintion;
         }
 
+        public LibvirtDomain CreateTransientMachine(string name)
+        {
+            XDocument def = GenerateMinimalMachine(name);
+            con.CreateDomain(def);
+            return con.GetDomainByName(name);
+        }
+
+        public LibvirtDomain CreatePersistentMachine(string name)
+        {
+            XDocument def = GenerateMinimalMachine(name);
+            con.DefineDomain(def);
+            return con.GetDomainByName(name);
+        }
+
+        public void DestroyMachine(params LibvirtDomain[] doms)
+        {
+            foreach(LibvirtDomain dom in doms)
+                dom.Destroy();
+        }
+        
+        public void UndefineMachine(params LibvirtDomain[] doms)
+        {
+            foreach (LibvirtDomain dom in doms)
+                dom.Undefine();
+        }
+        
         public void Dispose()
         {
             con.Close();
