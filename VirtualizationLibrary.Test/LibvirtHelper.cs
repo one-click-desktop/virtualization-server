@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -22,7 +24,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test
 
         public bool IsRunningVm(string name) => con.GetDomainByName(name)?.IsActive ?? false;
         public bool Exists(string name) => con.GetDomainByName(name) != null;
-
+ 
         public static XDocument GenerateMinimalMachine(string name, string archisoPath = "/tmp/arch.iso", string definitionPath = "res/archiso.xml")
         {
             if (!File.Exists(definitionPath))
@@ -82,6 +84,11 @@ namespace OneClickDesktop.VirtualizationLibrary.Test
         {
             foreach (LibvirtDomain dom in doms)
                 dom.Undefine();
+        }
+        
+        public void StartDefaultNetwork()
+        {
+           System.Diagnostics.Process.Start("virsh","-c qemu:///system net-start default");
         }
         
         public void Dispose()

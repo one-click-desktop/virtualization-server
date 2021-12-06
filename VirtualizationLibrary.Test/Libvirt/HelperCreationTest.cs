@@ -15,6 +15,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
         {
             string libvirtUri = "qemu:///system";
             helper = new LibvirtHelper(libvirtUri);
+            helper.StartDefaultNetwork();
         }
 
         [TearDown]
@@ -22,7 +23,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
         {
             helper.Dispose();
         }
-
+        
         [Test]
         public void CreateTransientMachine()
         {

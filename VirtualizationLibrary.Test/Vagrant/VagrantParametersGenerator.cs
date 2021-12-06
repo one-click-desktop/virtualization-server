@@ -4,29 +4,29 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
 {
     public static class VagrantParametersGenerator
     {
-        public static VagrantParameters SimpleCreatableAlpine()
+        public static VagrantParameters SimpleCreatableAlpine(string name, string bridge)
         {
-            return new VagrantParameters("generic/alpine38", "testname", "testhostname", 512, 2);
+            return new VagrantParameters("generic/alpine38", name, "testhostname", bridge, 512, 2);
         }
         
-        public static VagrantParameters SimpleBadNameAlpine()
+        public static VagrantParameters SimpleBadNameAlpine(string name, string bridge)
         {
-            return new VagrantParameters("generic/alpine38", "test_name", "test_hostname", 512, 2);
+            return new VagrantParameters("generic/alpine38", "_"+name, "test_hostname", bridge, 512, 2);
         }
         
-        public static VagrantParameters SimpleMemoryHungryAlpine()
+        public static VagrantParameters SimpleMemoryHungryAlpine(string name, string bridge)
         {
-            return new VagrantParameters("generic/alpine38", "testname", "testhostname", 123512, 2);
+            return new VagrantParameters("generic/alpine38", name, "testhostname", bridge, 123512, 2);
         }
         
-        public static VagrantParameters SimpleCPUHungryAlpine()
+        public static VagrantParameters SimpleCPUHungryAlpine(string name, string bridge)
         {
-            return new VagrantParameters("generic/alpine38", "testname", "testhostname", 512, 1234);
+            return new VagrantParameters("generic/alpine38", name, "testhostname", bridge, 512, 1234);
         }
         
-        public static VagrantParameters InexistingBox()
+        public static VagrantParameters UnexistingBox(string name, string bridge)
         {
-            return new VagrantParameters("auhoiuhgkuywqfriuywkweefduyw", "testname", "testhostname", 512, 2);
+            return new VagrantParameters("auhoiuhgkuywqfriuywkweefduyw", name, "testhostname", bridge, 512, 2);
         }
     }
 }

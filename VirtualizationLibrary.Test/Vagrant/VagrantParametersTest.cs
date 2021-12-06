@@ -15,7 +15,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             int cpus = 6;
             int memory = 1234;
             string box = "generic/alpine38";
-            var p = new VagrantParameters(box, vm_name, hostname, memory, cpus);
+            string bridge = "br0";
+            var p = new VagrantParameters(box, vm_name, hostname, bridge, memory, cpus);
 
             StringDictionary env = new StringDictionary();
             env.Add("TEST", "TEST");
@@ -26,6 +27,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             StringAssert.AreEqualIgnoringCase(box, env["OCD_BOXNAME"]);
             StringAssert.AreEqualIgnoringCase(cpus.ToString(), env["OCD_CPUS"]);
             StringAssert.AreEqualIgnoringCase(memory.ToString(), env["OCD_MEMORY"]);
+            StringAssert.AreEqualIgnoringCase(bridge, env["OCD_BRIDGE"]);
             StringAssert.AreEqualIgnoringCase("TEST", env["TEST"]);
         }
     }

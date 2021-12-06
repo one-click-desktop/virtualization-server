@@ -4,7 +4,7 @@ using OneClickDesktop.VirtualizationLibrary.Libvirt;
 
 namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
 {
-    public class LibvirtWrapperTest
+    public class LibvirtWrapperExistenceTest
     {
         private LibvirtWrapper wrapper;
         private LibvirtHelper helper;
@@ -12,9 +12,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
         [SetUp]
         public void SetUp()
         {
-            string libvirtUri = "qemu:///system";
+            string libvirtUri = "qemu:///session";
             wrapper = new LibvirtWrapper(libvirtUri);
             helper = new LibvirtHelper(libvirtUri);
+            helper.StartDefaultNetwork();
         }
 
         [TearDown]

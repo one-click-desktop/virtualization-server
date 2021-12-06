@@ -11,14 +11,17 @@ opts = GetoptLong.new(
   [ '--cpus',        GetoptLong::REQUIRED_ARGUMENT ],
   [ '--memory',        GetoptLong::REQUIRED_ARGUMENT ],
   [ '--hostname',        GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--bridge',        GetoptLong::REQUIRED_ARGUMENT ],
 )
 
 #Default values or taken from environment
-boxname        = ENV['OCD_BOXNAME'] || 'random_box_generate_error' + (0...8).map { (65 + rand(26)).chr }.join
-vm_name        = ENV['OCD_VMNAME'] || 'default'
-cpus           = ENV['OCD_CPUS'] || 1
-memory         = ENV['OCD_MEMORY'] || 512
-hostname       = ENV['OCD_HOSTNAME'] || vm_name
+ENV_PREFIX = 'OCD_'
+boxname        = ENV[ENV_PREFIX+'BOXNAME'] || 'pass_box_name_error' + (0...8).map { (65 + rand(26)).chr }.join
+vm_name        = ENV[ENV_PREFIX+'VMNAME'] || 'default'
+cpus           = ENV[ENV_PREFIX+'CPUS'] || 1
+memory         = ENV[ENV_PREFIX+'MEMORY'] || 512
+hostname       = ENV[ENV_PREFIX+'HOSTNAME'] || vm_name
+bridge         = ENV[ENV_PREFIX+'BRIDGE'] || 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
 
 #Parsing cli parameters
 begin
@@ -34,6 +37,8 @@ begin
         hostname = arg
       when '--boxname'
         boxname = arg
+      when '--bridge'
+        bridge = arg
     end
   end
   rescue
@@ -43,9 +48,14 @@ end
 Vagrant.configure(2) do |config|
   config.vm.define vm_name
   config.vm.hostname = vm_name
+  config.vm.network :public_network,
+    :dev => bridge,
+    :mode => "bridge",
+    :type => "bridge"
   config.vm.box = boxname
 
   config.vm.provider :libvirt do |libvirt|
+    libvirt.qemu_use_agent = true
     libvirt.default_prefix = ""
     libvirt.title = vm_name
     libvirt.host = "example.com"
