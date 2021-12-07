@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net;
 using IDNT.AppBasics.Virtualization.Libvirt;
 
 namespace OneClickDesktop.VirtualizationLibrary.Libvirt
@@ -17,18 +19,18 @@ namespace OneClickDesktop.VirtualizationLibrary.Libvirt
             connection = LibvirtConnection.Create.WithLocalAuth().WithMetricsDisabled().Connect();
         }
         
+        #nullable enable
         public LibvirtDomain GetDomainByName(string name) => connection.GetDomainByName(name);
 
         public bool DoesDomainExist(string name) => GetDomainByName(name) != null;
 
         public bool DoesDomainActive(string name) => GetDomainByName(name)?.IsActive ?? false;
         
-        
-        public List<(string mac, string ipv4)> GetDomainsNetworkAddresses(string name)
+        #nullable enable
+        public IEnumerable<IPAddress> GetDomainsNetworkAddresses(string name)
         {
-            //Rozpocząć szukanie od tego!
-            //https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainInterfaceAddresses
-            return null;
+            LibvirtDomain dom = GetDomainByName(name);
+            return dom?.GetDomainNetworkAddresses();
         }
         
         /// <summary>

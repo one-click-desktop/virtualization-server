@@ -25,7 +25,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
         {
             //Zmienić przed uruchomieniem na nowym komputerze! (Czy jakiś bridge na pewno istnieje?)
             testBridgeDevice = "br0";
-            string libvirtUri = "qemu:///session";
+            string libvirtUri = "qemu:///system";
             helper = new LibvirtHelper(libvirtUri);
             wrap = new VagrantWrapper("res/Vagrantfile");
         }
