@@ -21,4 +21,11 @@
       <ProjectReference Include="..\VirtualizationLibrary\VirtualizationLibrary.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="res\archiso.xml" />
+      <AdditionalFiles Include="res\archiso.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </AdditionalFiles>
+    </ItemGroup>
+
 </Project>

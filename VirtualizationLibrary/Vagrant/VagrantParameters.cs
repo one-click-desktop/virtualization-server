@@ -103,6 +103,15 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         public HostnameParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
         { }
     }
+    
+    public class BridgeParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "BRIDGE";
+        public const string CLI_SUFFIX = "bridge";
+
+        public BridgeParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
 
     /// <summary>
     /// Klasa opisująca zbiór parametrów dla Vagrantfile
@@ -116,7 +125,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             parameters = new List<AbstractParameter>();
         }
 
-        public VagrantParameters(string boxName, string name, string hostname, int memory, int cpus)
+        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, int memory, int cpus)
         {
             parameters = new List<AbstractParameter>()
             {
@@ -124,7 +133,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                 new NameParameter(name),
                 new HostnameParameter(hostname),
                 new CpusParameter(cpus),
-                new MemoryParameter(memory)
+                new MemoryParameter(memory),
+                new BridgeParameter(bridgeDevice)
             };
         }
     
