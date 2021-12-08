@@ -424,3 +424,6 @@ FodyWeavers.xsd
 
 #vagrant files
 .vagrant/
+
+#MS vscode
+.vscode/
