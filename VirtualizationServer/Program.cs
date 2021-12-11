@@ -18,11 +18,11 @@ namespace OneClickDesktop.VirtualizationServer
             }
             catch (Exception ex)
             {
-                logger.Error(ex, "Unhandled Expetion - writing to log");
+                logger.Error(ex, "Unhandled Expetion - server is going down");
             }
             finally
             {
-                services.Dispose();
+                services?.Dispose();
                 NLog.LogManager.Shutdown();
             }
         }
