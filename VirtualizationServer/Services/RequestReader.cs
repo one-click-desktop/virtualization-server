@@ -6,9 +6,9 @@ namespace OneClickDesktop.VirtualizationServer.Services
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public void HelloWorld()
+        public RequestReader()
         {
-            logger.Info("Hello world");
+            logger.Info("Creating RequestReader");
         }
     }
 }

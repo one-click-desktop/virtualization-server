@@ -6,25 +6,23 @@ namespace OneClickDesktop.VirtualizationServer
 {
     class Program
     {
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+        private static RunningServices services;
 
         public static void Main()
         {
             try
             {
-                Logger.Info("Hello world");
-
-                RequestReader reader = new RequestReader();
-                reader.HelloWorld();
-
-                throw new Exception("Test exception");
+                services = StartProcedure.InitializeVirtualizationServer();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Goodbye cruel world");
+                logger.Error(ex, "Unhandled Expetion - writing to log");
             }
             finally
             {
+                services.Dispose();
                 NLog.LogManager.Shutdown();
             }
         }
