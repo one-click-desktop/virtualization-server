@@ -13,8 +13,16 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="NLog" Version="5.0.0-preview.3" />
       <PackageReference Include="OneClickDesktop.BackendClasses" Version="1.0.2" />
       <PackageReference Include="OneClickDesktop.RabbitModule.VirtualizationServer" Version="1.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="NLog.config" />
+      <AdditionalFiles Include="NLog.config">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </AdditionalFiles>
     </ItemGroup>
 
 </Project>
