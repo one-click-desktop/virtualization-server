@@ -8,4 +8,13 @@
         <RootNamespace>OneClickDesktop.VirtualizationServer</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\VirtualizationLibrary\VirtualizationLibrary.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="OneClickDesktop.BackendClasses" Version="1.0.2" />
+      <PackageReference Include="OneClickDesktop.RabbitModule.VirtualizationServer" Version="1.0.5" />
+    </ItemGroup>
+
 </Project>
