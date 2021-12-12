@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NLog;
+using OneClickDesktop.BackendClasses.Communication;
 using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.VirtualizationServer.Services;
 
@@ -45,7 +46,7 @@ namespace OneClickDesktop.VirtualizationServer
             {
                 RabbitMQHostname = "localhost", //[TODO][CONFIG] Wynieść do konfiguracji!
                 RabbitMQPort = 5672, //[TODO][CONFIG] Wynieść do konfiguracji!
-                MessageTypeMappings = new Dictionary<string, Type>()
+                MessageTypeMappings = TypeMappings.VirtualizationServerReceiveMapping
             };
             
             return new OverseersCommunication(parameters);

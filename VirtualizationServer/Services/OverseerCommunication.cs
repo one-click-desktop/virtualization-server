@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.Loader;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
 using OneClickDesktop.RabbitModule.VirtualizationServer;
 using OneClickDesktop.VirtualizationServer.Messages;
@@ -28,6 +29,12 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             logger.Info("Creating OverseersCommunication");
             connection = new VirtualizationServerClient(parameters.RabbitMQHostname, parameters.RabbitMQPort, parameters.MessageTypeMappings);
+        }
+        
+        public void RegisterReaderLoop(EventHandler<MessageEventArgs> reader)
+        {
+            connection.CommonReceived += reader;
+            connection.DirectReceived += reader;
         }
 
         public void ReportModel(ModelReportMessage model)
