@@ -1,66 +1,132 @@
-# -*- mode: ruby -*-
+#!/usr/bin/ruby
 
-# Plik zajmuje sie tworzeniem maszyn na rzadanie VagrantWrappera
+#Dobry do testów jest obraz d3atiq/ubuntu-18.04-rdp-base
+
+#Jest kilka uwag do obraxzu vagrantowego:
+#1. Potrzebny jest qemu-ga na guescie
+#2. Potrzeba skonfigurowanego xrdp w srodku
+
 
 require 'getoptlong'
 
-#Definition for cli arguments
-opts = GetoptLong.new(
-  [ '--boxname',        GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--vm-name',        GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--cpus',        GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--memory',        GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--hostname',        GetoptLong::OPTIONAL_ARGUMENT ],
-  [ '--bridge',        GetoptLong::REQUIRED_ARGUMENT ],
-)
-
-#Default values or taken from environment
-ENV_PREFIX = 'OCD_'
-boxname        = ENV[ENV_PREFIX+'BOXNAME'] || 'pass_box_name_error' + (0...8).map { (65 + rand(26)).chr }.join
-vm_name        = ENV[ENV_PREFIX+'VMNAME'] || 'default'
-cpus           = ENV[ENV_PREFIX+'CPUS'] || 1
-memory         = ENV[ENV_PREFIX+'MEMORY'] || 512
-hostname       = ENV[ENV_PREFIX+'HOSTNAME'] || vm_name
-bridge         = ENV[ENV_PREFIX+'BRIDGE'] || 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
-
-#Parsing cli parameters
-begin
-  opts.each do |opt, arg|
-    case opt
-      when '--vm-name'
-        vm_name = arg
-      when '--cpus'
-        cpus = arg
-      when '--memory'
-        memory = arg
-      when '--hostname'
-        hostname = arg
-      when '--boxname'
-        boxname = arg
-      when '--bridge'
-        bridge = arg
+class Configuration 
+    @@ENV_PREFIX = 'OCD_'
+    
+    def initialize
+       @opts = GetoptLong.new(
+         [ '--boxname',        GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--vm-name',        GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--cpus',        GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--memory',        GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--hostname',        GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--bridge',        GetoptLong::REQUIRED_ARGUMENT ],
+       )
+       set_default_values
     end
-  end
-  rescue
+    
+    def to_str
+        puts "Variables passed to Vagrantfile"
+        puts "boxname: #{@boxname}"
+        puts "vm_name: #{@vm_name}"
+        puts "cpus: #{@cpus}"
+        puts "memory: #{@memory}"
+        puts "bridge: #{@bridge}"
+        puts "hostname: #{@hostname}"
+    end
+    
+    def parse_configuration
+        parse_environment
+        parse_arguments
+    end
+    
+    def vm_name
+        @vm_name
+    end
+    
+    def hostname
+        @hostname
+    end
+        
+    def boxname
+        @boxname
+    end
+            
+    def cpus
+        @cpus
+    end
+                
+    def bridge
+        @bridge
+    end
+    
+    def memory
+        @memory
+    end
+    
+    private
+    
+    def set_default_values
+        @boxname        = 'pass_box_name_error' + (0...8).map { (65 + rand(26)).chr }.join
+        @vm_name        = 'default'
+        @cpus           = 1
+        @memory         = 512
+        @hostname       = @vm_name
+        @bridge         = 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
+    end
+   
+    def parse_environment
+        @boxname        = ENV[@@ENV_PREFIX+'BOXNAME']
+        @vm_name        = ENV[@@ENV_PREFIX+'VMNAME'] 
+        @cpus           = ENV[@@ENV_PREFIX+'CPUS'] 
+        @memory         = ENV[@@ENV_PREFIX+'MEMORY'] 
+        @hostname       = ENV[@@ENV_PREFIX+'HOSTNAME']
+        @bridge         = ENV[@@ENV_PREFIX+'BRIDGE'] 
+    end
+   
+    def parse_arguments
+        begin
+          @opts.each do |opt, arg|
+            case opt
+              when '--vm-name'
+                @vm_name = arg
+              when '--cpus'
+                @cpus = arg
+              when '--memory'
+                @memory = arg
+              when '--hostname'
+                @hostname = arg
+              when '--boxname'
+                @boxname = arg
+              when '--bridge'
+                @bridge = arg
+            end
+          end
+          rescue
+        end
+    end
 end
+
+conf = Configuration.new
+conf.parse_configuration
+puts conf.to_str
 
 #Parametrized vagrant configuration
 Vagrant.configure(2) do |config|
-  config.vm.define vm_name
-  config.vm.hostname = vm_name
+  config.vm.define conf.vm_name
+  config.vm.hostname = conf.hostname
   config.vm.network :public_network,
-    :dev => bridge,
+    :dev => conf.bridge,
     :mode => "bridge",
     :type => "bridge"
-  config.vm.box = boxname
+  config.vm.box = conf.boxname
 
   config.vm.provider :libvirt do |libvirt|
-    libvirt.qemu_use_agent = true
+    #libvirt.qemu_use_agent = true
     libvirt.default_prefix = ""
-    libvirt.title = vm_name
+    libvirt.title = conf.vm_name
     libvirt.host = "example.com"
-    libvirt.memory = memory
-    libvirt.cpus = cpus
+    libvirt.memory = conf.memory
+    libvirt.cpus = conf.cpus
     libvirt.uri = "qemu:///system" # deprecha - serwery wirtualizacji wcale nie sa potrzebne
   end
 
