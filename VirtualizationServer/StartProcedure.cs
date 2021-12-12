@@ -23,22 +23,23 @@ namespace OneClickDesktop.VirtualizationServer
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         
-        private static void PrepareVirtualizationManager(RunningServices result)
+        private static VirtualizationManager PrepareVirtualizationManager()
         {
             string libvirtUri = "qemu:///system";//[TODO][CONFIG] Wynieść do konfiguracji!
             string vagrantFile = "res/Vagrantfile";//[TODO][CONFIG] Wynieść do konfiguracji!
-            result.VirtualizationManager = new VirtualizationManager(libvirtUri, vagrantFile);
+            return new VirtualizationManager(libvirtUri, vagrantFile);
         }
         
-        private static void PrepareModelManager(RunningServices result)
+        private static ModelManager PrepareModelManager(string directQueueName)
         {
             ServerResources totalResources = new ServerResources(4096, 4, 200, new List<GpuId>());//[TODO][CONFIG] Wynieść do konfiguracji!
             Dictionary<string, TemplateResources> templates = new Dictionary<string, TemplateResources>();
             templates["cpu"] = new TemplateResources(2048, 4, 20, false);//[TODO][CONFIG] Wynieść do konfiguracji!
-            result.ModelManager = new ModelManager(totalResources, templates);
+            
+            return new ModelManager(directQueueName, totalResources, templates);
         }
 
-        private static void PrepareOverseersCommunication(RunningServices result)
+        private static OverseersCommunication PrepareOverseersCommunication()
         {
             OverseersCommunicationParameters parameters = new OverseersCommunicationParameters()
             {
@@ -46,7 +47,8 @@ namespace OneClickDesktop.VirtualizationServer
                 RabbitMQPort = 5672, //[TODO][CONFIG] Wynieść do konfiguracji!
                 MessageTypeMappings = new Dictionary<string, Type>()
             };
-            result.OverseersCommunication = new OverseersCommunication(parameters);
+            
+            return new OverseersCommunication(parameters);
         }
 
         public static RunningServices InitializeVirtualizationServer()
@@ -54,9 +56,9 @@ namespace OneClickDesktop.VirtualizationServer
             logger.Info("Initializing Virtualization Server");
 
             RunningServices res = new RunningServices();
-            PrepareVirtualizationManager(res);
-            PrepareModelManager(res);
-            PrepareOverseersCommunication(res);
+            res.VirtualizationManager = PrepareVirtualizationManager();
+            res.OverseersCommunication = PrepareOverseersCommunication();
+            res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName);
             
             //Spróbuj wysłać model do overseera
             //W przypadku niepowodzenia serwer nie może podjąć pracy

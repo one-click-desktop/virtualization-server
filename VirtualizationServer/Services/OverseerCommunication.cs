@@ -18,13 +18,16 @@ namespace OneClickDesktop.VirtualizationServer.Services
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         private RabbitModule.VirtualizationServer.VirtualizationServerClient connection;
+        
+        public string DirectQueueName
+        {
+            get => connection.DirectQueueName;
+        } 
 
         public OverseersCommunication(OverseersCommunicationParameters parameters)
         {
             logger.Info("Creating OverseersCommunication");
             connection = new VirtualizationServerClient(parameters.RabbitMQHostname, parameters.RabbitMQPort, parameters.MessageTypeMappings);
-            
-            
         }
 
         public void ReportModel(ModelReportMessage model)
@@ -45,7 +48,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         private void InitializationReturnHandler(object? model, ReturnEventArgs args)
         {
-            throw new Exception(args.ReplyText);
+            throw new Exception(args.ReplyText);//[TODO] Zmienić typ wyjątku na jakis konkretniejszy
         }
         #endregion
 
