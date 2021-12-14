@@ -115,17 +115,15 @@ namespace OneClickDesktop.VirtualizationServer
                 logger.Info($"Requesting machine {request.DomainName} for session but it is not available for session, actual state is {machine.State}");
                 return;
             }
-
-            // TODO: dodać mapowanie machineType <=> sessionType
-            // if (machine.MachineType != request.SessionType)
-            // {
-            //     logger.Info($"Requesting machine {request.DomainName} for session type {request.SessionType} but it cannot handle it, machine type is {machine.MachineType}");
-            //     return;
-            // }
+            
+            if (machine.MachineType.Type != request.PartialSession.SessionType.Type)
+            {
+                logger.Info($"Requesting machine {request.DomainName} for session type {request.PartialSession.SessionType.Type} but it cannot handle it, machine type is {machine.MachineType}");
+                return;
+            }
 
             try
             {
-                // TODO: zastanowić się czy chcemy guid czy usera w tym RDTO
                 runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
             }
             catch (Exception e)
