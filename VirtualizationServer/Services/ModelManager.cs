@@ -23,7 +23,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                             IDictionary<string, TemplateResources> templates)
         {
             logger.Info("Creating ModelManager");
-            model = new BackendClasses.Model.VirtualizationServer(totalResources, templates, directQueueName);//TODO: wyrzucic nazwe kolejki po zmianie wersji
+            model = new BackendClasses.Model.VirtualizationServer(totalResources, templates, directQueueName);
             logger.Info($"Server managed resources: {JsonSerializer.Serialize(totalResources)}");
             logger.Info($"Loaded machine templates: {String.Join(",\n", templates.Select(t => $"{t.Key}:{JsonSerializer.Serialize(t.Value)}"))}");
         }
@@ -35,7 +35,6 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         public Machine GetMachine(string name)
         {
-            // TODO: do jednego overseera, prawdopodobnie trzeba będzie zmienić machine guid na stringa name
             return model.RunningMachines.TryGetValue(name, out var machine) ? machine : null;
         }
 
