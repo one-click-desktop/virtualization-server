@@ -56,6 +56,7 @@ namespace OneClickDesktop.VirtualizationServer
         {
             logger.Info("Initializing Virtualization Server");
 
+            // TODO: dodać serwis odpowiedzialny za client heartbeata
             RunningServices res = new RunningServices();
             res.VirtualizationManager = PrepareVirtualizationManager();
             res.OverseersCommunication = PrepareOverseersCommunication();

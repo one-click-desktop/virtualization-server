@@ -1,7 +1,10 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using NLog.LayoutRenderers;
 using OneClickDesktop.BackendClasses.Communication.RabbitDTOs;
+using OneClickDesktop.BackendClasses.Model;
+using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
 using OneClickDesktop.VirtualizationServer.Messages;
 
@@ -38,8 +41,24 @@ namespace OneClickDesktop.VirtualizationServer
                 return;
             }
             
-            //Tutaj póżniej normalne przetwarzanie danych
             logger.Info($"Processing DomainStartupRequest {JsonSerializer.Serialize(request)}");
+
+            var machine = runningServices.ModelManager.GetMachine(request.DomainName);
+            if (machine != null && machine.State != MachineState.TurnedOff)
+            {
+                logger.Info($"Requesting startup of machine {request.DomainName} but it is already running");
+                return;
+            }
+            
+            if (!runningServices.VirtualizationManager.DomainStartup(request.DomainName, request.DomainType))
+            {
+                logger.Info($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
+                return;
+            }
+            
+            // TODO: update model if domain startup doesnt do that
+            
+            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
         private static void ProcessDomainShutdownRequest(DomainShutdownRDTO request)
@@ -50,8 +69,29 @@ namespace OneClickDesktop.VirtualizationServer
                 return;
             }
             
-            //Tutaj póżniej normalne przetwarzanie danych
             logger.Info($"Processing DomainShutdownRequest {JsonSerializer.Serialize(request)}");
+
+            var machine = runningServices.ModelManager.GetMachine(request.DomainName);
+            if (machine == null)
+            {
+                logger.Info($"Requesting shutdown of machine {request.DomainName} but it doesn't exist");
+                return;
+            }
+            if (!Constants.State.MachineAvailableForShutdown.Contains(machine.State))
+            {
+                logger.Info($"Requesting shutdown of machine {request.DomainName} but it is not available for shutdown, actual state is {machine.State}");
+                return;
+            }
+            
+            if (!runningServices.VirtualizationManager.DomainShutdown(request.DomainName))
+            {
+                logger.Info($"Shutdown of machine {request.DomainName} failed");
+                return;
+            }
+            
+            // TODO: update model if domain startup doesnt do that
+            
+            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
         private static void ProcessSessionCreationRequest(SessionCreationRDTO request)
@@ -62,8 +102,40 @@ namespace OneClickDesktop.VirtualizationServer
                 return;
             }
             
-            //Tutaj póżniej normalne przetwarzanie danych
             logger.Info($"Processing SessionCreationRequest {JsonSerializer.Serialize(request)}");
+            var machine = runningServices.ModelManager.GetMachine(request.DomainName);
+            if (machine == null)
+            {
+                logger.Info($"Requesting machine {request.DomainName} for session but it doesn't exist");
+                return;
+            }
+            
+            if (!Constants.State.MachineAvailableForSession.Contains(machine.State))
+            {
+                logger.Info($"Requesting machine {request.DomainName} for session but it is not available for session, actual state is {machine.State}");
+                return;
+            }
+
+            // TODO: dodać mapowanie machineType <=> sessionType
+            // if (machine.MachineType != request.SessionType)
+            // {
+            //     logger.Info($"Requesting machine {request.DomainName} for session type {request.SessionType} but it cannot handle it, machine type is {machine.MachineType}");
+            //     return;
+            // }
+
+            try
+            {
+                // TODO: zastanowić się czy chcemy guid czy usera w tym RDTO
+                runningServices.ModelManager.CreateSession(new Session(new User(request.UserGuid), request.SessionType), request.DomainName);
+            }
+            catch (Exception e)
+            {
+                logger.Info(e.Message);
+                return;
+            }
+
+            machine.State = MachineState.Reserved;
+            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
         /// <summary>
@@ -90,6 +162,7 @@ namespace OneClickDesktop.VirtualizationServer
                     SessionCreationRDTO sessionCreation = SessionCreationMessage.ConversionReceivedData(args.RabbitMessage.Type);
                     ProcessSessionCreationRequest(sessionCreation);
                     break;
+                // TODO: dodać procesownie requestu o raport
                 default:
                     logger.Warn("Message type doesn't recognised - refuse to process data");
                     break;

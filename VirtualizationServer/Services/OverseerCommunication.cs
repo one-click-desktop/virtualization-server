@@ -18,12 +18,9 @@ namespace OneClickDesktop.VirtualizationServer.Services
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private RabbitModule.VirtualizationServer.VirtualizationServerClient connection;
+        private VirtualizationServerClient connection;
         
-        public string DirectQueueName
-        {
-            get => connection.DirectQueueName;
-        } 
+        public string DirectQueueName => connection.DirectQueueName;
 
         public OverseersCommunication(OverseersCommunicationParameters parameters)
         {
@@ -47,7 +44,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
             connection.Return += InitializationReturnHandler;
             
             ReportModel(model);
-
+            // to może nie zadziałać jeżeli return zostanie zwrócony z opóźnieniem
+            // TODO: dodać returnHandler, który będzie informował że nie ma overseerów
             connection.Return -= InitializationReturnHandler;
         }
         
