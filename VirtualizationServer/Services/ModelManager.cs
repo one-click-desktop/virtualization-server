@@ -36,12 +36,12 @@ namespace OneClickDesktop.VirtualizationServer.Services
         public Machine GetMachine(string name)
         {
             // TODO: do jednego overseera, prawdopodobnie trzeba będzie zmienić machine guid na stringa name
-            return model.RunningMachines.TryGetValue(Guid.Parse(name), out var machine) ? machine : null;
+            return model.RunningMachines.TryGetValue(name, out var machine) ? machine : null;
         }
 
         public Session CreateSession(Session partialSession, string machineName)
         {
-            return model.CreateFullSession(partialSession, Guid.Parse(machineName));
+            return model.CreateFullSession(partialSession, machineName);
         }
     }
 }

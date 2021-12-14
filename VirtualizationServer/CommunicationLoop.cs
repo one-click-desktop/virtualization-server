@@ -126,7 +126,7 @@ namespace OneClickDesktop.VirtualizationServer
             try
             {
                 // TODO: zastanowić się czy chcemy guid czy usera w tym RDTO
-                runningServices.ModelManager.CreateSession(new Session(new User(request.UserGuid), request.SessionType), request.DomainName);
+                runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
             }
             catch (Exception e)
             {
