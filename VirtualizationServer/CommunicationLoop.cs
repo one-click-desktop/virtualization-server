@@ -162,7 +162,9 @@ namespace OneClickDesktop.VirtualizationServer
                     SessionCreationRDTO sessionCreation = SessionCreationMessage.ConversionReceivedData(args.RabbitMessage.Type);
                     ProcessSessionCreationRequest(sessionCreation);
                     break;
-                // TODO: dodać procesownie requestu o raport
+                case ModelReportMessage.MessageTypeName:
+                    runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+                    break;
                 default:
                     logger.Warn("Message type doesn't recognised - refuse to process data");
                     break;
