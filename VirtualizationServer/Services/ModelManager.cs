@@ -42,5 +42,10 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             return model.CreateFullSession(partialSession, machineName);
         }
+
+        public Machine CreateMachine(string name, MachineType type, GpuId gpuId = null)
+        {
+            return model.CreateMachine(name, type, gpuId);
+        }
     }
 }
