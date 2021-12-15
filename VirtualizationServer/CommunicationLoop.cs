@@ -134,6 +134,12 @@ namespace OneClickDesktop.VirtualizationServer
 
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
+
+        private static void ProcessModelReportRequest()
+        {
+            logger.Info("Processing ModelReportRequest");
+            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+        }
         
         /// <summary>
         /// Metoda wywoływana w przypadku otrzymania wiadomości z kolejki wspólnej lub bezpośredniej.
@@ -160,7 +166,7 @@ namespace OneClickDesktop.VirtualizationServer
                     ProcessSessionCreationRequest(sessionCreation);
                     break;
                 case ModelReportMessage.MessageTypeName:
-                    runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+                    ProcessModelReportRequest();
                     break;
                 default:
                     logger.Warn("Message type doesn't recognised - refuse to process data");
