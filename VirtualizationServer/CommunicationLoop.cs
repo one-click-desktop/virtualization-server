@@ -132,7 +132,6 @@ namespace OneClickDesktop.VirtualizationServer
                 return;
             }
 
-            machine.State = MachineState.Reserved;
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
