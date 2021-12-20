@@ -28,7 +28,7 @@
       <AdditionalFiles Include="NLog.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </AdditionalFiles>
-	  <AdditionalFiles Include="appsettings.json">
+	  <AdditionalFiles Include="appsettings.json>
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </AdditionalFiles>
     </ItemGroup>

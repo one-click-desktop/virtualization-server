@@ -1,3 +1,5 @@
+using System.Configuration;
+
 namespace OneClickDesktop.VirtualizationServer
 {
     /// <summary>
@@ -6,6 +8,11 @@ namespace OneClickDesktop.VirtualizationServer
     /// </summary>
     public static class Configuration
     {
-        public const string AppId = "VirtSrv";
+        public static string AppId = "VirtSrv";
+    }
+
+    public class OneClickDesktopSettings
+    {
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using OneClickDesktop.VirtualizationServer.Services;
 
 namespace OneClickDesktop.VirtualizationServer
@@ -17,6 +18,15 @@ namespace OneClickDesktop.VirtualizationServer
         {
             try
             {
+                //Wczytaj plik konfiguracyjny
+                var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json").Build();
+
+
+                var section = config.GetSection(nameof(WeatherClientConfig));
+                var weatherClientConfig = section.Get<WeatherClientConfig>();
+
                 //Wystartuj wszystkie potrzebne servicy
                 services = StartProcedure.InitializeVirtualizationServer();
                 
