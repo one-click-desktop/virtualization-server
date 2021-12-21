@@ -16,6 +16,16 @@ namespace OneClickDesktop.VirtualizationServer.Services
         public string VirtSrvId;
     }
     
+    /// <summary>
+    /// Exception thrown when there is lack of overseers on the other side
+    /// </summary>
+    public class OverseerCommunicationException : Exception
+    {
+        public OverseerCommunicationException() { }
+        public OverseerCommunicationException(string? message) : base(message) { }
+        public OverseerCommunicationException(string? message, Exception? innerException) : base(message, innerException) { }
+    }
+    
     public class OverseersCommunication: IDisposable
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
@@ -30,6 +40,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             logger.Info("Creating OverseersCommunication");
             connection = new VirtualizationServerClient(parameters.RabbitMQHostname, parameters.RabbitMQPort, parameters.MessageTypeMappings);
             appId = parameters.VirtSrvId;
+            connection.Return += InitializationReturnHandler;
         }
         
         public void RegisterReaderLoop(EventHandler<MessageEventArgs> reader)
@@ -58,21 +69,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
             connection.SendToOverseers(SignRabbitPackage(model));
         }
 
-        public void FirstReportModel(ModelReportMessage model)
-        {
-            connection.Return += InitializationReturnHandler;
-            
-            ReportModel(model);
-            // to może nie zadziałać jeżeli return zostanie zwrócony z opóźnieniem
-            // TODO: dodać returnHandler, który będzie informował że nie ma overseerów
-            connection.Return -= InitializationReturnHandler;
-        }
-        
         #region Event handlers
 
         private void InitializationReturnHandler(object model, ReturnEventArgs args)
         {
-            throw new Exception(args.ReplyText);//[TODO] Zmienić typ wyjątku na jakis konkretniejszy
+            throw new OverseerCommunicationException(args.ReplyText);
         }
         #endregion
 

@@ -67,9 +67,9 @@ namespace OneClickDesktop.VirtualizationServer
             logger.Info("First time brodcast model to overseers");
             try
             {
-                res.OverseersCommunication.FirstReportModel(res.ModelManager.GetReport());
+                res.OverseersCommunication.ReportModel(res.ModelManager.GetReport());
             }
-            catch (Exception e)
+            catch (OverseerCommunicationException e)
             {
                 res.Dispose();
                 logger.Fatal(e, "No overseer has been found. Server cannot operate.");
