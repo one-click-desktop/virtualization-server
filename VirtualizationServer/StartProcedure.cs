@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NLog;
 using OneClickDesktop.BackendClasses.Communication;
 using OneClickDesktop.BackendClasses.Model.Resources;
+using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
 using OneClickDesktop.VirtualizationServer.Services;
 
 namespace OneClickDesktop.VirtualizationServer
@@ -24,14 +25,12 @@ namespace OneClickDesktop.VirtualizationServer
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         
-        private static VirtualizationManager PrepareVirtualizationManager()
+        private static VirtualizationManager PrepareVirtualizationManager(VirtSrvConfiguration systemConfig)
         {
-            string libvirtUri = "qemu:///system";//[TODO][CONFIG] Wynieść do konfiguracji!
-            string vagrantFile = "res/Vagrantfile";//[TODO][CONFIG] Wynieść do konfiguracji!
-            return new VirtualizationManager(libvirtUri, vagrantFile);
+            return new VirtualizationManager(systemConfig);
         }
         
-        private static ModelManager PrepareModelManager(string directQueueName)
+        private static ModelManager PrepareModelManager(string directQueueName, ResourcesConfiguration resourcesConfig)
         {
             ServerResources totalResources = new ServerResources(4096, 4, 200, new List<GpuId>());//[TODO][CONFIG] Wynieść do konfiguracji!
             Dictionary<string, TemplateResources> templates = new Dictionary<string, TemplateResources>();
@@ -40,27 +39,28 @@ namespace OneClickDesktop.VirtualizationServer
             return new ModelManager(directQueueName, totalResources, templates);
         }
 
-        private static OverseersCommunication PrepareOverseersCommunication()
+        private static OverseersCommunication PrepareOverseersCommunication(VirtSrvConfiguration systemConfig)
         {
             OverseersCommunicationParameters parameters = new OverseersCommunicationParameters()
             {
-                RabbitMQHostname = "localhost", //[TODO][CONFIG] Wynieść do konfiguracji!
-                RabbitMQPort = 5672, //[TODO][CONFIG] Wynieść do konfiguracji!
-                MessageTypeMappings = TypeMappings.VirtualizationServerReceiveMapping
+                RabbitMQHostname = systemConfig.InternalRabbitMQHostname,
+                RabbitMQPort = systemConfig.InternalRabbitMQPort,
+                MessageTypeMappings = TypeMappings.VirtualizationServerReceiveMapping,
+                VirtSrvId = systemConfig.VirtualizationServerId
             };
             
             return new OverseersCommunication(parameters);
         }
 
-        public static RunningServices InitializeVirtualizationServer()
+        public static RunningServices InitializeVirtualizationServer(VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig)
         {
             logger.Info("Initializing Virtualization Server");
 
             // TODO: dodać serwis odpowiedzialny za client heartbeata
             RunningServices res = new RunningServices();
-            res.VirtualizationManager = PrepareVirtualizationManager();
-            res.OverseersCommunication = PrepareOverseersCommunication();
-            res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName);
+            res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
+            res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
+            res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);
             
             //Spróbuj wysłać model do overseera
             //W przypadku niepowodzenia serwer nie może podjąć pracy

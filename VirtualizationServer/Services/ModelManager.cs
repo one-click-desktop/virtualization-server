@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text.Json;
 using NLog;
 using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
+using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer.Services
@@ -46,6 +48,21 @@ namespace OneClickDesktop.VirtualizationServer.Services
         public Machine CreateMachine(string name, MachineType type, GpuId gpuId = null)
         {
             return model.CreateMachine(name, type, gpuId);
+        }
+
+        public void CreateRunningMachine(string domainName, MachineType type, IPAddress addr)
+        {
+            Machine m = model.CreateMachine(domainName, type);
+            
+            m.State = MachineState.Free;
+            m.AssignAddress(new MachineAddress("127.0.0.1"));//TODO: problemy z networkingiem - uwaga na ten trick!
+        }
+
+        public TemplateResources GetTemplateResources(MachineType type)
+        {
+            if (!model.TemplateResources.TryGetValue(type.Type, out TemplateResources res))
+                return null;
+            return res;
         }
     }
 }

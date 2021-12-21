@@ -9,18 +9,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="CommunicationLoop.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\VirtualizationLibrary\VirtualizationLibrary.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="IPNetwork2" Version="2.5.381" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Ini" Version="6.0.0" />
       <PackageReference Include="NLog" Version="5.0.0-preview.3" />
-      <PackageReference Include="OneClickDesktop.BackendClasses" Version="1.0.6" />
+      <PackageReference Include="OneClickDesktop.BackendClasses" Version="1.0.9" />
       <PackageReference Include="OneClickDesktop.RabbitModule.VirtualizationServer" Version="1.0.5" />
     </ItemGroup>
 
@@ -28,9 +25,9 @@
       <AdditionalFiles Include="NLog.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </AdditionalFiles>
-	  <AdditionalFiles Include="appsettings.json">
+	  <None Include="virtsrv.ini">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </AdditionalFiles>
+      </None>
     </ItemGroup>
 
 </Project>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Loader;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
+using OneClickDesktop.RabbitModule.Common.RabbitMessage;
 using OneClickDesktop.RabbitModule.VirtualizationServer;
 using OneClickDesktop.VirtualizationServer.Messages;
 
@@ -12,6 +13,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         public string RabbitMQHostname;
         public int RabbitMQPort;
         public IReadOnlyDictionary<string, Type> MessageTypeMappings;
+        public string VirtSrvId;
     }
     
     public class OverseersCommunication: IDisposable
@@ -19,6 +21,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         private VirtualizationServerClient connection;
+        private string appId;
         
         public string DirectQueueName => connection.DirectQueueName;
 
@@ -26,6 +29,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             logger.Info("Creating OverseersCommunication");
             connection = new VirtualizationServerClient(parameters.RabbitMQHostname, parameters.RabbitMQPort, parameters.MessageTypeMappings);
+            appId = parameters.VirtSrvId;
         }
         
         public void RegisterReaderLoop(EventHandler<MessageEventArgs> reader)
@@ -33,10 +37,25 @@ namespace OneClickDesktop.VirtualizationServer.Services
             connection.CommonReceived += reader;
             connection.DirectReceived += reader;
         }
+        
+        /// <summary>
+        /// Signs rabbit message with system-wide unique application identifier
+        /// </summary>
+        /// <param name="msg">Message to sign</param>
+        /// <returns>Signed message</returns>
+        private IRabbitMessage SignRabbitPackage(IRabbitMessage msg)
+        {
+            msg.AppId = appId;
+            return msg;
+        }
 
+        /// <summary>
+        /// Reports model to overseers
+        /// </summary>
+        /// <param name="model">Model to report</param>
         public void ReportModel(ModelReportMessage model)
         {
-            connection.SendToOverseers(model);
+            connection.SendToOverseers(SignRabbitPackage(model));
         }
 
         public void FirstReportModel(ModelReportMessage model)
@@ -51,7 +70,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         
         #region Event handlers
 
-        private void InitializationReturnHandler(object? model, ReturnEventArgs args)
+        private void InitializationReturnHandler(object model, ReturnEventArgs args)
         {
             throw new Exception(args.ReplyText);//[TODO] Zmienić typ wyjątku na jakis konkretniejszy
         }

@@ -1,11 +1,14 @@
 using System;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using NLog.LayoutRenderers;
 using OneClickDesktop.BackendClasses.Communication.RabbitDTOs;
 using OneClickDesktop.BackendClasses.Model;
+using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
+using OneClickDesktop.VirtualizationLibrary.Vagrant;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer
@@ -49,15 +52,22 @@ namespace OneClickDesktop.VirtualizationServer
                 logger.Info($"Requesting startup of machine {request.DomainName} but it is already running");
                 return;
             }
-            
-            if (!runningServices.VirtualizationManager.DomainStartup(request.DomainName, request.DomainType))
+
+            TemplateResources resources = runningServices.ModelManager.GetTemplateResources(request.DomainType);
+            if (resources == null)
             {
-                logger.Info($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
+                logger.Warn($"Machine of type {request.DomainType} is not registered at this server. Skipping request");
+                return;
+            }
+
+            if (!runningServices.VirtualizationManager
+                .DomainStartup(request.DomainName, runningServices.ModelManager.GetTemplateResources(request.DomainType), out IPAddress address))
+            {
+                logger.Warn($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
                 return;
             }
             
-            // TODO: update model if domain startup doesnt do that
-            
+            runningServices.ModelManager.CreateRunningMachine(request.DomainName, request.DomainType, address);
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
@@ -154,15 +164,15 @@ namespace OneClickDesktop.VirtualizationServer
             switch (args.RabbitMessage.Type)
             {
                 case DomainStartupMessage.MessageTypeName:
-                    DomainStartupRDTO domainStartup = DomainStartupMessage.ConversionReceivedData(args.RabbitMessage.Type);
+                    DomainStartupRDTO domainStartup = args.RabbitMessage.Message as DomainStartupRDTO;
                     ProcessDomainStartupRequest(domainStartup);
                     break;
                 case DomainShutdownMessage.MessageTypeName:
-                    DomainShutdownRDTO domainShutdown = DomainShutdownMessage.ConversionReceivedData(args.RabbitMessage.Type);
+                    DomainShutdownRDTO domainShutdown = args.RabbitMessage.Message as DomainShutdownRDTO;
                     ProcessDomainShutdownRequest(domainShutdown);
                     break;
                 case SessionCreationMessage.MessageTypeName:
-                    SessionCreationRDTO sessionCreation = SessionCreationMessage.ConversionReceivedData(args.RabbitMessage.Type);
+                    SessionCreationRDTO sessionCreation = args.RabbitMessage.Message as SessionCreationRDTO;
                     ProcessSessionCreationRequest(sessionCreation);
                     break;
                 case ModelReportMessage.MessageTypeName:

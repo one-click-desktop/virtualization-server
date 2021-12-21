@@ -61,7 +61,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
             vagrant.VagrantUp(VagrantParametersGenerator.SimpleCreatableAlpine(name, bridge));
 
             Assert.That(wrapper.DoesDomainActive(name), Is.True);
-            Assume.That(wrapper.GetDomainsNetworkAddresses(name)?.Count(), Is.EqualTo(6));
+            Assume.That(wrapper.GetDomainsNetworkAddresses(name)?.Count(), Is.EqualTo(5));
 
             vagrant.VagrantDestroy(VagrantParametersGenerator.SimpleCreatableAlpine(name, bridge));
             

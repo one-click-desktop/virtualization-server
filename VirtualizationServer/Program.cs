@@ -2,7 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using OneClickDesktop.VirtualizationServer.Services;
+using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
+using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationParsers;
 
 namespace OneClickDesktop.VirtualizationServer
 {
@@ -14,21 +15,31 @@ namespace OneClickDesktop.VirtualizationServer
 
         private static Semaphore exitSemaphore;
 
+        private static (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) ParseConfiguration()
+        {
+            
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddIniFile("virtsrv.ini")//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: virtsrv.ini)
+                //.AddIniFile("resources.ini")//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: resources.ini)
+                .Build();
+
+
+            var section = config.GetSection("OneClickDesktop");
+            VirtSrvConfiguration systemConfig = section.Get<VirtSrvConfiguration>();
+
+            return (systemConfig, null);
+        }
+
         public static void Main()
         {
             try
             {
                 //Wczytaj plik konfiguracyjny
-                var config = new ConfigurationBuilder()
-                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json").Build();
-
-
-                var section = config.GetSection(nameof(WeatherClientConfig));
-                var weatherClientConfig = section.Get<WeatherClientConfig>();
+                (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) = ParseConfiguration();
 
                 //Wystartuj wszystkie potrzebne servicy
-                services = StartProcedure.InitializeVirtualizationServer();
+                services = StartProcedure.InitializeVirtualizationServer(systemConfig, resourcesConfig);
                 
                 //Zarejestruj logikę prztwarzania wiadomości
                 CommunicationLoop.RegisterReadingLogic(services);

@@ -6,7 +6,7 @@ namespace OneClickDesktop.VirtualizationServer.Messages
 {
     public class SessionCreationMessage: SessionCreationTemplate, IRabbitMessage
     {
-        public string AppId { get; set; } = Configuration.AppId;
+        public string AppId { get; set; }
         public string Type { get; set; } = MessageTypeName;
         public object Message { get; set; }
 
