@@ -121,7 +121,7 @@ Vagrant.configure(2) do |config|
   config.vm.box = conf.boxname
 
   config.vm.provider :libvirt do |libvirt|
-    #libvirt.qemu_use_agent = true
+    libvirt.qemu_use_agent = true
     libvirt.default_prefix = ""
     libvirt.title = conf.vm_name
     libvirt.host = "example.com"

@@ -6,13 +6,13 @@ namespace OneClickDesktop.VirtualizationServer.Messages
 {
     public class SessionCreationMessage: SessionCreationTemplate, IRabbitMessage
     {
-        public string AppId { get; set; }
+        public string SenderIdentifier { get; set; }
         public string Type { get; set; } = MessageTypeName;
-        public object Message { get; set; }
+        public object Body { get; set; }
 
         public SessionCreationMessage(SessionCreationRDTO data)
         {
-            Message = data;
+            Body = data;
         }
     }
 }

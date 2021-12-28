@@ -160,19 +160,19 @@ namespace OneClickDesktop.VirtualizationServer
         /// <param name="args">Dane otrzymane w kolejce</param>
         private static void ConsumeOverseerRequests(object sender, MessageEventArgs args)
         {
-            logger.Debug($"Received message from {args.RabbitMessage.AppId} of type {DomainStartupMessage.MessageTypeName}");
+            logger.Debug($"Received message from {args.RabbitMessage.SenderIdentifier} of type {DomainStartupMessage.MessageTypeName}");
             switch (args.RabbitMessage.Type)
             {
                 case DomainStartupMessage.MessageTypeName:
-                    DomainStartupRDTO domainStartup = args.RabbitMessage.Message as DomainStartupRDTO;
+                    DomainStartupRDTO domainStartup = args.RabbitMessage.Body as DomainStartupRDTO;
                     ProcessDomainStartupRequest(domainStartup);
                     break;
                 case DomainShutdownMessage.MessageTypeName:
-                    DomainShutdownRDTO domainShutdown = args.RabbitMessage.Message as DomainShutdownRDTO;
+                    DomainShutdownRDTO domainShutdown = args.RabbitMessage.Body as DomainShutdownRDTO;
                     ProcessDomainShutdownRequest(domainShutdown);
                     break;
                 case SessionCreationMessage.MessageTypeName:
-                    SessionCreationRDTO sessionCreation = args.RabbitMessage.Message as SessionCreationRDTO;
+                    SessionCreationRDTO sessionCreation = args.RabbitMessage.Body as SessionCreationRDTO;
                     ProcessSessionCreationRequest(sessionCreation);
                     break;
                 case ModelReportMessage.MessageTypeName:

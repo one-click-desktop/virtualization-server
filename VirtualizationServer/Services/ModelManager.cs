@@ -55,7 +55,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             Machine m = model.CreateMachine(domainName, type);
             
             m.State = MachineState.Free;
-            m.AssignAddress(new MachineAddress("127.0.0.1"));//TODO: problemy z networkingiem - uwaga na ten trick!
+            m.AssignAddress(new MachineAddress(addr.MapToIPv4().ToString()));
         }
 
         public TemplateResources GetTemplateResources(MachineType type)
