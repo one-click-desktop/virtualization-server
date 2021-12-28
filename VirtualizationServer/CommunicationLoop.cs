@@ -20,6 +20,8 @@ namespace OneClickDesktop.VirtualizationServer
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private static RunningServices runningServices;
+
+        //private static object modelLock;
         
         /// <summary>
         /// Konstruktor podłącza się do nasłuchiwania na kolejkach wejściowych do serwera.
@@ -99,8 +101,7 @@ namespace OneClickDesktop.VirtualizationServer
                 return;
             }
             
-            // TODO: update model if domain startup doesnt do that
-            
+            runningServices.ModelManager.DeleteMachine(request.DomainName);
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         

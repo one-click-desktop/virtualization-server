@@ -45,9 +45,9 @@ namespace OneClickDesktop.VirtualizationServer.Services
             return model.CreateFullSession(partialSession, machineName);
         }
 
-        public Machine CreateMachine(string name, MachineType type, GpuId gpuId = null)
+        public void DeleteMachine(string machineName)
         {
-            return model.CreateMachine(name, type, gpuId);
+            model.DeleteMachine(machineName);
         }
 
         public void CreateRunningMachine(string domainName, MachineType type, IPAddress addr)
@@ -55,6 +55,14 @@ namespace OneClickDesktop.VirtualizationServer.Services
             Machine m = model.CreateMachine(domainName, type);
             
             m.State = MachineState.Free;
+            m.AssignAddress(new MachineAddress(addr.MapToIPv4().ToString()));
+        }
+        
+        public void CreateBootingMachine(string domainName, MachineType type, IPAddress addr)
+        {
+            Machine m = model.CreateMachine(domainName, type);
+            
+            m.State = MachineState.Booting;
             m.AssignAddress(new MachineAddress(addr.MapToIPv4().ToString()));
         }
 
