@@ -49,21 +49,17 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             model.DeleteMachine(machineName);
         }
-
-        public void CreateRunningMachine(string domainName, MachineType type, IPAddress addr)
-        {
-            Machine m = model.CreateMachine(domainName, type);
-            
-            m.State = MachineState.Free;
-            m.AssignAddress(new MachineAddress(addr.MapToIPv4().ToString()));
-        }
         
-        public void CreateBootingMachine(string domainName, MachineType type, IPAddress addr)
+        /// <summary>
+        /// Create machine in booting state. Every modification to machine is made by reference.
+        /// </summary>
+        /// <param name="domainName"></param>
+        /// <param name="type"></param>
+        public void CreateBootingMachine(string domainName, MachineType type)
         {
             Machine m = model.CreateMachine(domainName, type);
-            
+
             m.State = MachineState.Booting;
-            m.AssignAddress(new MachineAddress(addr.MapToIPv4().ToString()));
         }
 
         public TemplateResources GetTemplateResources(MachineType type)
