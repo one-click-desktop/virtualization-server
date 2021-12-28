@@ -20,4 +20,8 @@
       <ProjectReference Include="..\AppBasics-Virtualization-Libvirt\src\IDNT.AppBasics.Virtualization.Libvirt.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="NLog" Version="5.0.0-preview.3" />
+    </ItemGroup>
+
 </Project>

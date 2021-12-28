@@ -13,6 +13,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
     /// </summary>
     public class VagrantWrapper
     {
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+        
         private string vagrantfilePath;
 
         public VagrantWrapper(string filepath)
@@ -81,8 +83,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                     throw new BadArgumentsException(stderr);
                 case 255:
                 default:
-                    //TODO: Dodac logi
-                    Console.Error.Write(stderr);
+                    logger.Error($"Vagrant reports unpredicted error with code {code}.");
                     throw new UnknownException(stderr);
                     break;
             }
