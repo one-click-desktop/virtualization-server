@@ -56,7 +56,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         /// <returns>Signed message</returns>
         private IRabbitMessage SignRabbitPackage(IRabbitMessage msg)
         {
-            msg.AppId = appId;
+            msg.SenderIdentifier = appId;
             return msg;
         }
 

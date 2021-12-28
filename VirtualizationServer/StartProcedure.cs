@@ -5,6 +5,7 @@ using OneClickDesktop.BackendClasses.Communication;
 using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
 using OneClickDesktop.VirtualizationServer.Services;
+using OneClickDesktop.RabbitModule.Common.Exceptions;
 
 namespace OneClickDesktop.VirtualizationServer
 {
@@ -55,24 +56,34 @@ namespace OneClickDesktop.VirtualizationServer
         public static RunningServices InitializeVirtualizationServer(VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig)
         {
             logger.Info("Initializing Virtualization Server");
-
-            // TODO: dodać serwis odpowiedzialny za client heartbeata
-            RunningServices res = new RunningServices();
-            res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
-            res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
-            res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);
             
-            //Spróbuj wysłać model do overseera
-            //W przypadku niepowodzenia serwer nie może podjąć pracy
-            logger.Info("First time brodcast model to overseers");
+            RunningServices res = new RunningServices();
             try
             {
+                // TODO: dodać serwis odpowiedzialny za client heartbeata
+                res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
+                res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
+                res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);
+
+                logger.Info("First time brodcast model to overseers");
                 res.OverseersCommunication.ReportModel(res.ModelManager.GetReport());
             }
-            catch (OverseerCommunicationException e)
+            catch (BrokerConnectionException e)//Przypadek błednej komunikacji z brokerem
             {
                 res.Dispose();
-                logger.Fatal(e, "No overseer has been found. Server cannot operate.");
+                logger.Fatal("Cannot connect with broker. Server cannot operate. Is there any broker working over given address?");
+                throw;
+            }
+            catch (MissingExchangeException e)//Przypadek niezadeklarowanego exchange
+            {
+                res.Dispose();
+                logger.Fatal("Exchange is missing in broker. Server cannot operate. Is there any overseer working?");
+                throw;
+            }
+            catch (OverseerCommunicationException e)//Przypadek powracającego returna przy wysłaniu modelu
+            {
+                res.Dispose();
+                logger.Fatal("No overseer has been found. Server cannot operate.");
                 throw;
             }
 
