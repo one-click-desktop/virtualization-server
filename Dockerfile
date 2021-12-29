@@ -13,10 +13,10 @@ RUN dotnet publish --no-restore -f net5.0 -c Release -o /app/publish
 FROM base AS final
 
 #Install libvirt libraries
-RUN apt-get update && apt-get install libvirt-dev -y
+RUN apt-get update && apt-get install libvirt-clients -y
 
 WORKDIR /app
 COPY --from=publish /app/publish .
 COPY ["assets/entry_point.sh", "entry_point.sh"]
 
-ENTRYPOINT ["dotnet", "OneClickDesktop.VirtualizationServer.dll"]
+ENTRYPOINT ["/bin/bash", "entry_point.sh"]
