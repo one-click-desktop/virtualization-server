@@ -121,6 +121,7 @@ Vagrant.configure(2) do |config|
   config.vm.box = conf.boxname
 
   config.vm.provider :libvirt do |libvirt|
+    libvirt.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
     libvirt.qemu_use_agent = true
     libvirt.default_prefix = ""
     libvirt.title = conf.vm_name
