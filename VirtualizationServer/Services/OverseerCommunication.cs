@@ -73,7 +73,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         private void ReturnHandler(object model, ReturnEventArgs args)
         {
-            if (!args.ReturnReason.OK)
+            if (args.ReturnReason != ReturnEventArgs.Reason.OK)
             {
                 //[TODO]: to jest bez sensu - wyjatek rzucany w innym watku a lapany w głownym
                 throw new OverseerCommunicationException(args.ReplyText);
