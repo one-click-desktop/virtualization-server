@@ -45,17 +45,21 @@ namespace OneClickDesktop.VirtualizationServer.Services
             return model.CreateFullSession(partialSession, machineName);
         }
 
-        public Machine CreateMachine(string name, MachineType type, GpuId gpuId = null)
+        public void DeleteMachine(string machineName)
         {
-            return model.CreateMachine(name, type, gpuId);
+            model.DeleteMachine(machineName);
         }
-
-        public void CreateRunningMachine(string domainName, MachineType type, IPAddress addr)
+        
+        /// <summary>
+        /// Create machine in booting state. Every modification to machine is made by reference.
+        /// </summary>
+        /// <param name="domainName"></param>
+        /// <param name="type"></param>
+        public void CreateBootingMachine(string domainName, MachineType type)
         {
             Machine m = model.CreateMachine(domainName, type);
-            
-            m.State = MachineState.Free;
-            m.AssignAddress(new MachineAddress(addr.MapToIPv4().ToString()));
+
+            m.State = MachineState.Booting;
         }
 
         public TemplateResources GetTemplateResources(MachineType type)
