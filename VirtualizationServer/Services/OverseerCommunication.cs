@@ -73,6 +73,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         private void InitializationReturnHandler(object model, ReturnEventArgs args)
         {
+            args.ReturnReason.
             throw new OverseerCommunicationException(args.ReplyText);
         }
         #endregion
