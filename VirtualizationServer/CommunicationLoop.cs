@@ -67,6 +67,7 @@ namespace OneClickDesktop.VirtualizationServer
             return null;
         }
         
+        #region Request processing
         private static void ProcessDomainStartupRequest(DomainStartupRDTO request)
         {
             if (request == null)
@@ -190,6 +191,7 @@ namespace OneClickDesktop.VirtualizationServer
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
         }
+        #endregion
         
         /// <summary>
         /// Metoda wywoływana w przypadku otrzymania wiadomości z kolejki wspólnej lub bezpośredniej.
@@ -217,6 +219,9 @@ namespace OneClickDesktop.VirtualizationServer
                     break;
                 case ModelReportMessage.MessageTypeName:
                     ProcessModelReportRequest();
+                    break;
+                case PingMessage.MessageTypeName:
+                    logger.Debug("Ping message - ignore");
                     break;
                 default:
                     logger.Warn("Message type doesn't recognised - refuse to process data");
