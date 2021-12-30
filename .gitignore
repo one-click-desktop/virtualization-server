@@ -427,3 +427,6 @@ FodyWeavers.xsd
 
 #MS vscode
 .vscode/
+
+#Docker build artifacts
+libs/
