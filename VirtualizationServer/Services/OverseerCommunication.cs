@@ -40,7 +40,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             logger.Info("Creating OverseersCommunication");
             connection = new VirtualizationServerClient(parameters.RabbitMQHostname, parameters.RabbitMQPort, parameters.MessageTypeMappings);
             appId = parameters.VirtSrvId;
-            connection.Return += InitializationReturnHandler;
+            connection.Return += ReturnHandler;
         }
         
         public void RegisterReaderLoop(EventHandler<MessageEventArgs> reader)
@@ -71,10 +71,13 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         #region Event handlers
 
-        private void InitializationReturnHandler(object model, ReturnEventArgs args)
+        private void ReturnHandler(object model, ReturnEventArgs args)
         {
-            args.ReturnReason.
-            throw new OverseerCommunicationException(args.ReplyText);
+            if (!args.ReturnReason.OK)
+            {
+                //[TODO]: to jest bez sensu - wyjatek rzucany w innym watku a lapany w głownym
+                throw new OverseerCommunicationException(args.ReplyText);
+            }
         }
         #endregion
 

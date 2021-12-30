@@ -11,6 +11,7 @@ using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
+using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer
@@ -39,13 +40,13 @@ namespace OneClickDesktop.VirtualizationServer
         /// </remarks>
         /// <param name="services">Prawidłowo zainicjalizowany zbiór serviców</param>
         /// <param name="exitSemaphore">Semafor, który po zwolnieniu wyłączy server.</param>
-        public static void RegisterReadingLogic(RunningServices services, Semaphore exitSemaphore)
+        public static void RegisterReadingLogic(VirtSrvConfiguration virtSrvConfig, RunningServices services, Semaphore exitSemaphore)
         {
             runningServices = services;
             runningServices.OverseersCommunication.RegisterReaderLoop(ConsumeOverseerRequests);
             
             //[TODO][CONFIG] Wynieść do configuracji
-            receiveCommandTimer = new System.Timers.Timer(20 * 1000);
+            receiveCommandTimer = new System.Timers.Timer(virtSrvConfig.OversserCommunicationShutdownTimeout * 1000);
             //Jeżeli timer się skończy => możliwe, że brakuje overseerów - zakończ prace servera
             receiveCommandTimer.Enabled = true;
             receiveCommandTimer.Elapsed += (obj, args) =>

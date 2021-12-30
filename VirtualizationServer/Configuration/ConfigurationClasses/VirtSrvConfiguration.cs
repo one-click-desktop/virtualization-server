@@ -12,6 +12,11 @@ namespace OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasse
         /// </summary>
         public string VirtualizationServerId { get; set; } = "virtsrv-test";
         /// <summary>
+        /// Shutdown timeout (in seconds) for overseer communication.
+        /// After this time server wil go down if overseer won't send any message.
+        /// </summary>
+        public int OversserCommunicationShutdownTimeout { get; set; } = 120;
+        /// <summary>
         /// Connection string to libvirt daemon
         /// </summary>
         public string LibvirtUri { get; set; } = "qemu:///system";

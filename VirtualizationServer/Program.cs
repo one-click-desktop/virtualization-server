@@ -46,7 +46,7 @@ namespace OneClickDesktop.VirtualizationServer
                     //Semafor mówiący czy trzeba zatrzymac server
                     exitSemaphore = new Semaphore(0, 1);
                     //Zarejestruj logikę prztwarzania wiadomości
-                    CommunicationLoop.RegisterReadingLogic(services, exitSemaphore);
+                    CommunicationLoop.RegisterReadingLogic(systemConfig, services, exitSemaphore);
 
                     //Oczekuj na SIGINT
                     Console.CancelKeyPress += (sender, args) =>
@@ -55,13 +55,7 @@ namespace OneClickDesktop.VirtualizationServer
                         logger.Info("SIGINT received - shuting down server");
                         exitSemaphore.Release();
                     };
-                    
-                    
-                    services.OverseersCommunication.RegisterReaderLoop((sender, args) =>
-                    {
-                        
-                    });
-                    
+
                     exitSemaphore.WaitOne();
                 }
             }
