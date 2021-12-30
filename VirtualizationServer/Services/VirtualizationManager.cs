@@ -69,7 +69,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             }
             catch (VagrantException e)
             {
-                logger.Error(e, "Vagrant up return with error");
+                logger.Error(e, "Vagrant up returned with error");
                 return false;
             }
         }
@@ -87,8 +87,26 @@ namespace OneClickDesktop.VirtualizationServer.Services
         /// </returns>
         public bool DomainShutdown(string domainName)
         {
-            // TODO: add implementation
-            return true;
+            if (!libvirt.DoesDomainExist(domainName))
+                return false;
+            
+            try
+            {
+                VagrantParameters parameters = new VagrantParameters
+                (
+                    conf.VagrantboxUri,
+                    domainName,
+                    domainName,
+                    conf.BridgeInterfaceName
+                );
+                vagrant.VagrantDestroy(parameters);
+                return true;
+            }
+            catch (VagrantException e)
+            {
+                logger.Error(e, "Vagrant destroy returned with error");
+                return false;
+            }
         }
 
         public void Dispose()

@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading.Tasks;
 using NLog.LayoutRenderers;
 using OneClickDesktop.BackendClasses.Communication.RabbitDTOs;
 using OneClickDesktop.BackendClasses.Model;
@@ -20,6 +21,8 @@ namespace OneClickDesktop.VirtualizationServer
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private static RunningServices runningServices;
+
+        private static object modelLock = new object();
         
         /// <summary>
         /// Konstruktor podłącza się do nasłuchiwania na kolejkach wejściowych do serwera.
@@ -35,6 +38,34 @@ namespace OneClickDesktop.VirtualizationServer
             runningServices = services;
             runningServices.OverseersCommunication.RegisterReaderLoop(ConsumeOverseerRequests);
         }
+
+        private static Action AsyncDomainStartup(DomainStartupRDTO request)
+        {
+            bool success = runningServices.VirtualizationManager
+                .DomainStartup(request.DomainName,
+                    runningServices.ModelManager.GetTemplateResources(request.DomainType), out IPAddress address);
+            
+            lock (modelLock)
+            {
+                if (!success)
+                {
+                    logger.Warn($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
+
+                    //Usunięcie wystartowanej maszyny z błedem
+                    runningServices.ModelManager.DeleteMachine(request.DomainName);
+                }
+                else
+                {
+                    //Zmiana stanu prawidłowo wystartowanej maszyny
+                    Machine m = runningServices.ModelManager.GetMachine(request.DomainName);
+                    m.State = MachineState.Free;
+                    m.AssignAddress(new MachineAddress(address.MapToIPv4().ToString()));
+                }
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+            }
+
+            return null;
+        }
         
         private static void ProcessDomainStartupRequest(DomainStartupRDTO request)
         {
@@ -45,30 +76,28 @@ namespace OneClickDesktop.VirtualizationServer
             }
             
             logger.Info($"Processing DomainStartupRequest {JsonSerializer.Serialize(request)}");
-
-            var machine = runningServices.ModelManager.GetMachine(request.DomainName);
-            if (machine != null && machine.State != MachineState.TurnedOff)
+            lock (modelLock)
             {
-                logger.Info($"Requesting startup of machine {request.DomainName} but it is already running");
-                return;
-            }
+                var machine = runningServices.ModelManager.GetMachine(request.DomainName);
+                if (machine != null && machine.State != MachineState.TurnedOff)
+                {
+                    logger.Info($"Requesting startup of machine {request.DomainName} but it is already running");
+                    return;
+                }
 
-            TemplateResources resources = runningServices.ModelManager.GetTemplateResources(request.DomainType);
-            if (resources == null)
-            {
-                logger.Warn($"Machine of type {request.DomainType} is not registered at this server. Skipping request");
-                return;
-            }
+                TemplateResources resources = runningServices.ModelManager.GetTemplateResources(request.DomainType);
+                if (resources == null)
+                {
+                    logger.Warn(
+                        $"Machine of type {request.DomainType} is not registered at this server. Skipping request");
+                    return;
+                }
+                
+                runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
+                Task.Run(() => AsyncDomainStartup(request));
 
-            if (!runningServices.VirtualizationManager
-                .DomainStartup(request.DomainName, runningServices.ModelManager.GetTemplateResources(request.DomainType), out IPAddress address))
-            {
-                logger.Warn($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
-                return;
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
-            
-            runningServices.ModelManager.CreateRunningMachine(request.DomainName, request.DomainType, address);
-            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
         private static void ProcessDomainShutdownRequest(DomainShutdownRDTO request)
@@ -80,28 +109,31 @@ namespace OneClickDesktop.VirtualizationServer
             }
             
             logger.Info($"Processing DomainShutdownRequest {JsonSerializer.Serialize(request)}");
+            lock (modelLock)
+            {
+                var machine = runningServices.ModelManager.GetMachine(request.DomainName);
+                if (machine == null)
+                {
+                    logger.Info($"Requesting shutdown of machine {request.DomainName} but it doesn't exist");
+                    return;
+                }
 
-            var machine = runningServices.ModelManager.GetMachine(request.DomainName);
-            if (machine == null)
-            {
-                logger.Info($"Requesting shutdown of machine {request.DomainName} but it doesn't exist");
-                return;
+                if (!Constants.State.MachineAvailableForShutdown.Contains(machine.State))
+                {
+                    logger.Info(
+                        $"Requesting shutdown of machine {request.DomainName} but it is not available for shutdown, actual state is {machine.State}");
+                    return;
+                }
+
+                if (!runningServices.VirtualizationManager.DomainShutdown(request.DomainName))
+                {
+                    logger.Info($"Shutdown of machine {request.DomainName} failed");
+                    return;
+                }
+
+                runningServices.ModelManager.DeleteMachine(request.DomainName);
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
-            if (!Constants.State.MachineAvailableForShutdown.Contains(machine.State))
-            {
-                logger.Info($"Requesting shutdown of machine {request.DomainName} but it is not available for shutdown, actual state is {machine.State}");
-                return;
-            }
-            
-            if (!runningServices.VirtualizationManager.DomainShutdown(request.DomainName))
-            {
-                logger.Info($"Shutdown of machine {request.DomainName} failed");
-                return;
-            }
-            
-            // TODO: update model if domain startup doesnt do that
-            
-            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
         private static void ProcessSessionCreationRequest(SessionCreationRDTO request)
@@ -113,42 +145,50 @@ namespace OneClickDesktop.VirtualizationServer
             }
             
             logger.Info($"Processing SessionCreationRequest {JsonSerializer.Serialize(request)}");
-            var machine = runningServices.ModelManager.GetMachine(request.DomainName);
-            if (machine == null)
+            lock (modelLock)
             {
-                logger.Info($"Requesting machine {request.DomainName} for session but it doesn't exist");
-                return;
-            }
-            
-            if (!Constants.State.MachineAvailableForSession.Contains(machine.State))
-            {
-                logger.Info($"Requesting machine {request.DomainName} for session but it is not available for session, actual state is {machine.State}");
-                return;
-            }
-            
-            if (machine.MachineType.Type != request.PartialSession.SessionType.Type)
-            {
-                logger.Info($"Requesting machine {request.DomainName} for session type {request.PartialSession.SessionType.Type} but it cannot handle it, machine type is {machine.MachineType}");
-                return;
-            }
+                var machine = runningServices.ModelManager.GetMachine(request.DomainName);
+                if (machine == null)
+                {
+                    logger.Info($"Requesting machine {request.DomainName} for session but it doesn't exist");
+                    return;
+                }
 
-            try
-            {
-                runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
-            }
-            catch (Exception e)
-            {
-                logger.Info(e.Message);
-                return;
-            }
+                if (!Constants.State.MachineAvailableForSession.Contains(machine.State))
+                {
+                    logger.Info(
+                        $"Requesting machine {request.DomainName} for session but it is not available for session, actual state is {machine.State}");
+                    return;
+                }
 
-            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+                if (machine.MachineType.Type != request.PartialSession.SessionType.Type)
+                {
+                    logger.Info(
+                        $"Requesting machine {request.DomainName} for session type {request.PartialSession.SessionType.Type} but it cannot handle it, machine type is {machine.MachineType}");
+                    return;
+                }
+
+                try
+                {
+                    runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
+                }
+                catch (Exception e)
+                {
+                    logger.Info(e.Message);
+                    return;
+                }
+
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+            }
         }
 
         private static void ProcessModelReportRequest()
         {
             logger.Info("Processing ModelReportRequest");
-            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+            lock (modelLock)
+            {
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+            }
         }
         
         /// <summary>
