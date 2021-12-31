@@ -202,13 +202,14 @@ namespace OneClickDesktop.VirtualizationServer
                 try
                 {
                     session = runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
-                    session.AttachMachine(machine);
                 }
                 catch (Exception e)
                 {
                     logger.Info(e.Message);
                     return;
                 }
+                
+                // TODO: set machine state to occupied when client connects; maybe modify heartbeat to raise found when queue first created
 
                 runningServices.ClientHeartbeat.RegisterQueue(session.SessionGuid.ToString());
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
@@ -228,6 +229,8 @@ namespace OneClickDesktop.VirtualizationServer
         #region ClientHeartbeat handler
         private static void HandleMissing(object sender, string queue)
         {
+            logger.Info($"Processing missing queue {queue}");
+            
             if (!Guid.TryParse(queue, out var sessionGuid))
             {
                 logger.Warn("Cannot parse queue name to session guid");
@@ -242,11 +245,14 @@ namespace OneClickDesktop.VirtualizationServer
             }
 
             session.SessionState = SessionState.WaitingForRemoval;
+            session.CorrelatedMachine.State = MachineState.WaitingForShutdown;
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         
         private static void HandleFound(object sender, string queue)
         {
+            logger.Info($"Processing found queue {queue}");
+            
             if (!Guid.TryParse(queue, out var sessionGuid))
             {
                 logger.Warn("Cannot parse queue name to session guid");
@@ -261,6 +267,7 @@ namespace OneClickDesktop.VirtualizationServer
             }
 
             session.SessionState = SessionState.Running;
+            session.CorrelatedMachine.State = MachineState.Occupied;
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         #endregion

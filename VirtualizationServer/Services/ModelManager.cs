@@ -81,7 +81,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         public void DeleteSession(Guid sessionGuid)
         {
-            model.deleteSession(sessionGuid);
+            model.DeleteSession(sessionGuid);
         }
     }
 }
