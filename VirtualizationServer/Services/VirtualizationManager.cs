@@ -63,7 +63,14 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
                 address = libvirt.GetDomainsNetworkAddresses(domainName)
-                    .First(ip => bridgedNetwork.Contains(ip));
+                    .FirstOrDefault(ip => bridgedNetwork.Contains(ip));
+
+                if (address == null)
+                {
+                    logger.Warn($"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
+                    vagrant.BestEffortVagrantDestroy(parameters);
+                    return false;
+                }
                 
                 return true;
             }

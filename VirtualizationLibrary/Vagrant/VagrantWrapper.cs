@@ -104,16 +104,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             }
             catch (VagrantException e)
             {
-                //Sprobuj wyczyscic co sie da po blednym starcie maszyny
-                try
-                {
-                    VagrantDestroy(parameters);
-                }
-                catch (VagrantException)
-                {
-                    //Ignorujemy wyjatki z destroya - best effort
-                }
-
+                BestEffortVagrantDestroy(parameters);
                 throw;
             }
             
@@ -127,6 +118,19 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         {
             (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant destroy -f", parameters));
             CheckErrors(code, stderr);
+        }
+
+        public void BestEffortVagrantDestroy(VagrantParameters parameters)
+        {
+            //Sprobuj wyczyscic co sie da po blednym starcie maszyny
+            try
+            {
+                VagrantDestroy(parameters);
+            }
+            catch (VagrantException)
+            {
+                //Ignorujemy wyjatki z destroya - best effort
+            }
         }
     }
 }

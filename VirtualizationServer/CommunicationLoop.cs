@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog.LayoutRenderers;
 using OneClickDesktop.BackendClasses.Communication.RabbitDTOs;
@@ -10,6 +11,7 @@ using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
+using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer
@@ -23,6 +25,10 @@ namespace OneClickDesktop.VirtualizationServer
         private static RunningServices runningServices;
 
         private static object modelLock = new object();
+        /// <summary>
+        /// Timer liczy czas od ostatniej otrzymanej wiadomości.
+        /// </summary>
+        private static System.Timers.Timer receiveCommandTimer;
         
         /// <summary>
         /// Konstruktor podłącza się do nasłuchiwania na kolejkach wejściowych do serwera.
@@ -33,11 +39,25 @@ namespace OneClickDesktop.VirtualizationServer
         /// wtedy każde zapytanie zostanie porzetworzone tyle razy ile będzie wywołanych konstruktorów
         /// </remarks>
         /// <param name="services">Prawidłowo zainicjalizowany zbiór serviców</param>
-        public static void RegisterReadingLogic(RunningServices services)
+        /// <param name="exitSemaphore">Semafor, który po zwolnieniu wyłączy server.</param>
+        public static void RegisterReadingLogic(VirtSrvConfiguration virtSrvConfig, RunningServices services, Semaphore exitSemaphore)
         {
             runningServices = services;
             runningServices.OverseersCommunication.RegisterReaderLoop(ConsumeOverseerRequests);
+            
+            //[TODO][CONFIG] Wynieść do configuracji
+            receiveCommandTimer = new System.Timers.Timer(virtSrvConfig.OversserCommunicationShutdownTimeout * 1000);
+            //Jeżeli timer się skończy => możliwe, że brakuje overseerów - zakończ prace servera
+            receiveCommandTimer.Enabled = true;
+            receiveCommandTimer.Elapsed += (obj, args) =>
+            {
+                logger.Info("Timeout on message from overseers - stopping server.");
+                exitSemaphore.Release();
+            };
+            runningServices.OverseersCommunication.RegisterReaderLoop(RestartTimeoutTimer);
         }
+        
+        
 
         private static Action AsyncDomainStartup(DomainStartupRDTO request)
         {
@@ -53,6 +73,7 @@ namespace OneClickDesktop.VirtualizationServer
 
                     //Usunięcie wystartowanej maszyny z błedem
                     runningServices.ModelManager.DeleteMachine(request.DomainName);
+                    logger.Info($"Domain {request.DomainName} startup failed.");
                 }
                 else
                 {
@@ -60,6 +81,7 @@ namespace OneClickDesktop.VirtualizationServer
                     Machine m = runningServices.ModelManager.GetMachine(request.DomainName);
                     m.State = MachineState.Free;
                     m.AssignAddress(new MachineAddress(address.MapToIPv4().ToString()));
+                    logger.Info($"Domain {request.DomainName} startup succeded.");
                 }
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
@@ -67,6 +89,7 @@ namespace OneClickDesktop.VirtualizationServer
             return null;
         }
         
+        #region Request processing
         private static void ProcessDomainStartupRequest(DomainStartupRDTO request)
         {
             if (request == null)
@@ -190,6 +213,7 @@ namespace OneClickDesktop.VirtualizationServer
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
         }
+        #endregion
         
         /// <summary>
         /// Metoda wywoływana w przypadku otrzymania wiadomości z kolejki wspólnej lub bezpośredniej.
@@ -218,10 +242,24 @@ namespace OneClickDesktop.VirtualizationServer
                 case ModelReportMessage.MessageTypeName:
                     ProcessModelReportRequest();
                     break;
+                case PingMessage.MessageTypeName:
+                    logger.Debug("Ping message - ignore");
+                    break;
                 default:
                     logger.Warn("Message type doesn't recognised - refuse to process data");
                     break;
             }
+        }
+
+        private static void RestartTimeoutTimer(object sender, MessageEventArgs args)
+        {
+            //Tutaj teoretycznie timer może się skończyć pomiędzy Enabled = false a stopem
+            //Jednak my się tym nie przejmujemy - w sensie taki błąd jest dla nas akceptowalny.
+            //liczymy sekundy a nie milisekundy
+            receiveCommandTimer.Enabled = false;
+            receiveCommandTimer.Stop();//reset
+            receiveCommandTimer.Start();//reset
+            receiveCommandTimer.Enabled = true;
         }
     }
 }
