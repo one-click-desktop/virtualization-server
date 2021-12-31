@@ -52,5 +52,13 @@ namespace OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasse
         /// Port of external RabbitMQ broker (client heartbeat communication)
         /// </summary>
         public int ExternalRabbitMQPort {get; set;} = 5673;
+        /// <summary>
+        /// Amount of failed checks after which client is marked as missing
+        /// </summary>
+        public int ClientHeartbeatChecksForMissing { get; set; } = 2;
+        /// <summary>
+        /// Time between heartbeat checks (in ms)
+        /// </summary>
+        public int ClientHeartbeatChecksDelay { get; set; } = 10000;
     }
 }

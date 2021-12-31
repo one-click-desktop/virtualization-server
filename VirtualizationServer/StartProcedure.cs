@@ -6,6 +6,7 @@ using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
 using OneClickDesktop.VirtualizationServer.Services;
 using OneClickDesktop.RabbitModule.Common.Exceptions;
+using OneClickDesktop.RabbitModule.VirtualizationServer;
 
 namespace OneClickDesktop.VirtualizationServer
 {
@@ -13,6 +14,7 @@ namespace OneClickDesktop.VirtualizationServer
     {
         public VirtualizationManager VirtualizationManager;
         public OverseersCommunication OverseersCommunication;
+        public HeartbeatClient ClientHeartbeat;
         public ModelManager ModelManager;
         
         public void Dispose()
@@ -53,6 +55,14 @@ namespace OneClickDesktop.VirtualizationServer
             return new OverseersCommunication(parameters);
         }
 
+        private static HeartbeatClient PrepareClientHeartbeat(VirtSrvConfiguration systemConfig)
+        {
+            return new HeartbeatClient(systemConfig.ExternalRabbitMQHostname,
+                systemConfig.ExternalRabbitMQPort,
+                systemConfig.ClientHeartbeatChecksDelay, 
+                systemConfig.ClientHeartbeatChecksForMissing);
+        }
+
         public static RunningServices InitializeVirtualizationServer(VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig)
         {
             logger.Info("Initializing Virtualization Server");
@@ -60,7 +70,7 @@ namespace OneClickDesktop.VirtualizationServer
             RunningServices res = new RunningServices();
             try
             {
-                // TODO: dodać serwis odpowiedzialny za client heartbeata
+                res.ClientHeartbeat = PrepareClientHeartbeat(systemConfig);
                 res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
                 res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
                 res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);

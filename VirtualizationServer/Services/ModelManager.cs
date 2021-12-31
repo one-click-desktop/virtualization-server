@@ -68,5 +68,20 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 return null;
             return res;
         }
+
+        public Session GetSession(Guid sessionGuid)
+        {
+            return model.Sessions.TryGetValue(sessionGuid, out var session) ? session : null;
+        }
+
+        public Session GetSessionForMachine(string machineName)
+        {
+            return model.Sessions.Values.FirstOrDefault(session => machineName.Equals(session.CorrelatedMachine?.Name));
+        }
+
+        public void DeleteSession(Guid sessionGuid)
+        {
+            model.deleteSession(sessionGuid);
+        }
     }
 }

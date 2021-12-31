@@ -55,6 +55,9 @@ namespace OneClickDesktop.VirtualizationServer
                 exitSemaphore.Release();
             };
             runningServices.OverseersCommunication.RegisterReaderLoop(RestartTimeoutTimer);
+
+            runningServices.ClientHeartbeat.Missing += HandleMissing;
+            runningServices.ClientHeartbeat.Found += HandleFound;
         }
         
         
@@ -154,6 +157,10 @@ namespace OneClickDesktop.VirtualizationServer
                     return;
                 }
 
+                var session = runningServices.ModelManager.GetSessionForMachine(machine.Name);
+                runningServices.ClientHeartbeat.RemoveQueue(session.SessionGuid.ToString());
+                runningServices.ModelManager.DeleteSession(session.SessionGuid);
+
                 runningServices.ModelManager.DeleteMachine(request.DomainName);
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
@@ -191,9 +198,11 @@ namespace OneClickDesktop.VirtualizationServer
                     return;
                 }
 
+                Session session;
                 try
                 {
-                    runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
+                    session = runningServices.ModelManager.CreateSession(request.PartialSession, request.DomainName);
+                    session.AttachMachine(machine);
                 }
                 catch (Exception e)
                 {
@@ -201,6 +210,7 @@ namespace OneClickDesktop.VirtualizationServer
                     return;
                 }
 
+                runningServices.ClientHeartbeat.RegisterQueue(session.SessionGuid.ToString());
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
         }
@@ -212,6 +222,46 @@ namespace OneClickDesktop.VirtualizationServer
             {
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
+        }
+        #endregion
+
+        #region ClientHeartbeat handler
+        private static void HandleMissing(object sender, string queue)
+        {
+            if (!Guid.TryParse(queue, out var sessionGuid))
+            {
+                logger.Warn("Cannot parse queue name to session guid");
+            }
+
+            var session = runningServices.ModelManager.GetSession(sessionGuid);
+
+            if (session == null)
+            {
+                logger.Info($"Session not found for guid: {sessionGuid}");
+                return;
+            }
+
+            session.SessionState = SessionState.WaitingForRemoval;
+            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+        }
+        
+        private static void HandleFound(object sender, string queue)
+        {
+            if (!Guid.TryParse(queue, out var sessionGuid))
+            {
+                logger.Warn("Cannot parse queue name to session guid");
+            }
+
+            var session = runningServices.ModelManager.GetSession(sessionGuid);
+
+            if (session == null)
+            {
+                logger.Info($"Session not found for guid: {sessionGuid}");
+                return;
+            }
+
+            session.SessionState = SessionState.Running;
+            runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
         #endregion
         
