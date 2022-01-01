@@ -45,7 +45,6 @@ namespace OneClickDesktop.VirtualizationServer
             runningServices = services;
             runningServices.OverseersCommunication.RegisterReaderLoop(ConsumeOverseerRequests);
             
-            //[TODO][CONFIG] Wynieść do configuracji
             receiveCommandTimer = new System.Timers.Timer(virtSrvConfig.OversserCommunicationShutdownTimeout * 1000);
             //Jeżeli timer się skończy => możliwe, że brakuje overseerów - zakończ prace servera
             receiveCommandTimer.Enabled = true;
@@ -179,7 +178,7 @@ namespace OneClickDesktop.VirtualizationServer
             {
                 //Jeżeli sesja jest w grupie anulowanych - ignoruj prośbę
                 var localSession = runningServices.ModelManager.GetSession(request.PartialSession.SessionGuid);
-                if (localSession.SessionState == SessionState.Cancelled)
+                if (localSession?.SessionState == SessionState.Cancelled)
                 {
                     logger.Info($"Ignoring session creation of cancelled localSession");
                     return;
