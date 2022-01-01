@@ -48,6 +48,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
             if (libvirt.DoesDomainActive(domainName))
                 return false;
             
+            //TODO: sprawdz czy sa walne zasoby na utworzenie maszyny
+            
             try
             {
                 VagrantParameters parameters = new VagrantParameters

@@ -177,6 +177,14 @@ namespace OneClickDesktop.VirtualizationServer
             logger.Info($"Processing SessionCreationRequest {JsonSerializer.Serialize(request)}");
             lock (modelLock)
             {
+                //Jeżeli sesja jest w grupie anulowanych - ignoruj prośbę
+                var localSession = runningServices.ModelManager.GetSession(request.PartialSession.SessionGuid);
+                if (localSession.SessionState == SessionState.Cancelled)
+                {
+                    logger.Info($"Ignoring session creation of cancelled localSession");
+                    return;
+                }
+
                 var machine = runningServices.ModelManager.GetMachine(request.DomainName);
                 if (machine == null)
                 {
@@ -219,6 +227,40 @@ namespace OneClickDesktop.VirtualizationServer
             logger.Info("Processing ModelReportRequest");
             lock (modelLock)
             {
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+            }
+        }
+
+        private static void ProcessSessionCancelRequest(SessionCancelRDTO request)
+        {
+            if (request == null)
+            {
+                logger.Warn($"SessionCancelMessage was broken - data deserialisation or conversion failed");
+                return;
+            }
+            
+            logger.Info("Processing SessionCancelRequest");
+            lock (modelLock)
+            {
+                var session = runningServices.ModelManager.GetSession(request.SessionGuid);
+
+                if (session == null)
+                {
+                    logger.Debug("Ignoring unknown session cancelation");
+                    return;
+                }
+
+                if (session.SessionState == SessionState.Cancelled)
+                {
+                    logger.Debug("Ignoring already canceled session");
+                    return;
+                }
+
+                session.SessionState = SessionState.Cancelled;
+
+                if (session.CorrelatedMachine?.State is MachineState.Occupied or MachineState.Reserved)
+                    session.CorrelatedMachine.State = MachineState.Free;
+
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
         }
@@ -270,6 +312,7 @@ namespace OneClickDesktop.VirtualizationServer
         }
         #endregion
         
+        #region Event handlers
         /// <summary>
         /// Metoda wywoływana w przypadku otrzymania wiadomości z kolejki wspólnej lub bezpośredniej.
         /// W aktualnym stanie systemu nie ma znaczenia skąd przyszła wiadomość. Można to łatwo zmienić modyfikując konstruktor.
@@ -294,6 +337,10 @@ namespace OneClickDesktop.VirtualizationServer
                     SessionCreationRDTO sessionCreation = args.RabbitMessage.Body as SessionCreationRDTO;
                     ProcessSessionCreationRequest(sessionCreation);
                     break;
+                case SessionCancelMessage.MessageTypeName:
+                    SessionCancelRDTO sessionCancel = args.RabbitMessage.Body as SessionCancelRDTO;
+                    ProcessSessionCancelRequest(sessionCancel);
+                    break;
                 case ModelReportMessage.MessageTypeName:
                     ProcessModelReportRequest();
                     break;
@@ -316,5 +363,6 @@ namespace OneClickDesktop.VirtualizationServer
             receiveCommandTimer.Start();//reset
             receiveCommandTimer.Enabled = true;
         }
+        #endregion
     }
 }

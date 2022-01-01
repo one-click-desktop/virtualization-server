@@ -80,8 +80,9 @@ namespace OneClickDesktop.VirtualizationServer
             }
             catch (BrokerConnectionException e)//Przypadek błednej komunikacji z brokerem
             {
+                //TODO: brak podanego adresu dla ktorego wystapil blad (internal czy external rabbit?)
                 res.Dispose();
-                logger.Fatal("Cannot connect with broker. Server cannot operate. Is there any broker working over given address?");
+                logger.Fatal("Cannot connect with broker {e.}. Server cannot operate. Is there any broker working over given address?");
                 throw;
             }
             catch (MissingExchangeException e)//Przypadek niezadeklarowanego exchange

@@ -57,6 +57,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                     CreateNoWindow = true
                 };
             startInfo.EnvironmentVariables["VAGRANT_VAGRANTFILE"] = vagrantfilePath;
+            startInfo.EnvironmentVariables["VAGRANT_DEFAULT_PROVIDER"] = "libvirt";
             parameters.DefineEnvironmentalVariables(startInfo.EnvironmentVariables);
 
             return startInfo;
