@@ -208,8 +208,6 @@ namespace OneClickDesktop.VirtualizationServer
                     logger.Info(e.Message);
                     return;
                 }
-                
-                // TODO: set machine state to occupied when client connects; maybe modify heartbeat to raise found when queue first created
 
                 runningServices.ClientHeartbeat.RegisterQueue(session.SessionGuid.ToString());
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
