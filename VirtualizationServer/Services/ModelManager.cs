@@ -88,5 +88,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             model.DeleteSession(sessionGuid);
         }
+
+        public bool CanServerRunMachine(TemplateResources template)
+        {
+            var res = model.FreeResources - template;
+            return !(res.Memory < 0 || res.CpuCores < 0 || res.Storage < 0 || (template.AttachGpu && model.FreeResources.GpuCount < 1));
+        }
     }
 }

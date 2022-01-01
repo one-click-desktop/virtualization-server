@@ -119,6 +119,13 @@ namespace OneClickDesktop.VirtualizationServer
                         $"Machine of type {request.DomainType} is not registered at this server. Skipping request");
                     return;
                 }
+                
+                if (!runningServices.ModelManager.CanServerRunMachine(resources))
+                {
+                    logger.Warn(
+                        $"There is not enough resources to run machine of type {request.DomainType}. Skipping request");
+                    return;
+                }
 
                 runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
                 Task.Run(() => AsyncDomainStartup(request));
