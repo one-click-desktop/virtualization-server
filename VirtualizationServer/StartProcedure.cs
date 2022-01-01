@@ -70,9 +70,9 @@ namespace OneClickDesktop.VirtualizationServer
             RunningServices res = new RunningServices();
             try
             {
-                res.ClientHeartbeat = PrepareClientHeartbeat(systemConfig);
                 res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
                 res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
+                res.ClientHeartbeat = PrepareClientHeartbeat(systemConfig);
                 res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);
 
                 logger.Info("First time brodcast model to overseers");

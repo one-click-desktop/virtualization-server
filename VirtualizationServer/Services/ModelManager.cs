@@ -40,6 +40,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
             return model.RunningMachines.TryGetValue(name, out var machine) ? machine : null;
         }
 
+        public IEnumerable<string> GetMachineNames()
+        {
+            return model.RunningMachines.Values.Select(m => m.Name);
+        }
+
         public Session CreateSession(Session partialSession, string machineName)
         {
             return model.CreateFullSession(partialSession, machineName);
