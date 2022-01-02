@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
@@ -47,7 +49,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             address = null;
             if (libvirt.DoesDomainActive(domainName))
                 return false;
-            
+
             try
             {
                 VagrantParameters parameters = new VagrantParameters
@@ -61,17 +63,19 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 );
                 vagrant.VagrantUp(parameters);
                 
+                //Thread.Sleep(5000);
+                
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
-                address = libvirt.GetDomainsNetworkAddresses(domainName)
-                    .FirstOrDefault(ip => bridgedNetwork.Contains(ip));
+                var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
 
-                if (address == null)
+                if (addresses == null || addresses.FirstOrDefault(ip => bridgedNetwork.Contains(ip)) == null)
                 {
                     logger.Warn($"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
                     vagrant.BestEffortVagrantDestroy(parameters);
                     return false;
                 }
                 
+                address = addresses.FirstOrDefault(ip => bridgedNetwork.Contains(ip));
                 return true;
             }
             catch (VagrantException e)
@@ -114,6 +118,12 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 logger.Error(e, "Vagrant destroy returned with error");
                 return false;
             }
+        }
+
+        public void DomainCleanupOnShutdown(IEnumerable<string> domainNames)
+        {
+            foreach (string name in domainNames)
+                DomainShutdown(name);
         }
 
         public void Dispose()

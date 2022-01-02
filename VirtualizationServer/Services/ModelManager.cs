@@ -40,6 +40,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
             return model.RunningMachines.TryGetValue(name, out var machine) ? machine : null;
         }
 
+        public IEnumerable<string> GetMachineNames()
+        {
+            return model.RunningMachines.Values.Select(m => m.Name);
+        }
+
         public Session CreateSession(Session partialSession, string machineName)
         {
             return model.CreateFullSession(partialSession, machineName);
@@ -82,6 +87,12 @@ namespace OneClickDesktop.VirtualizationServer.Services
         public void DeleteSession(Guid sessionGuid)
         {
             model.DeleteSession(sessionGuid);
+        }
+
+        public bool CanServerRunMachine(TemplateResources template)
+        {
+            var res = model.FreeResources - template;
+            return !(res.Memory < 0 || res.CpuCores < 0 || res.Storage < 0 || (template.AttachGpu && model.FreeResources.GpuCount < 1));
         }
     }
 }

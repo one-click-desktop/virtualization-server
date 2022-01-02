@@ -25,11 +25,12 @@ namespace OneClickDesktop.VirtualizationServer
         private static RunningServices runningServices;
 
         private static object modelLock = new object();
+
         /// <summary>
         /// Timer liczy czas od ostatniej otrzymanej wiadomości.
         /// </summary>
         private static System.Timers.Timer receiveCommandTimer;
-        
+
         /// <summary>
         /// Konstruktor podłącza się do nasłuchiwania na kolejkach wejściowych do serwera.
         /// </summary>
@@ -40,12 +41,12 @@ namespace OneClickDesktop.VirtualizationServer
         /// </remarks>
         /// <param name="services">Prawidłowo zainicjalizowany zbiór serviców</param>
         /// <param name="exitSemaphore">Semafor, który po zwolnieniu wyłączy server.</param>
-        public static void RegisterReadingLogic(VirtSrvConfiguration virtSrvConfig, RunningServices services, Semaphore exitSemaphore)
+        public static void RegisterReadingLogic(VirtSrvConfiguration virtSrvConfig, RunningServices services,
+            Semaphore exitSemaphore)
         {
             runningServices = services;
             runningServices.OverseersCommunication.RegisterReaderLoop(ConsumeOverseerRequests);
-            
-            //[TODO][CONFIG] Wynieść do configuracji
+
             receiveCommandTimer = new System.Timers.Timer(virtSrvConfig.OversserCommunicationShutdownTimeout * 1000);
             //Jeżeli timer się skończy => możliwe, że brakuje overseerów - zakończ prace servera
             receiveCommandTimer.Enabled = true;
@@ -59,15 +60,13 @@ namespace OneClickDesktop.VirtualizationServer
             runningServices.ClientHeartbeat.Missing += HandleMissing;
             runningServices.ClientHeartbeat.Found += HandleFound;
         }
-        
-        
 
         private static Action AsyncDomainStartup(DomainStartupRDTO request)
         {
             bool success = runningServices.VirtualizationManager
                 .DomainStartup(request.DomainName,
                     runningServices.ModelManager.GetTemplateResources(request.DomainType), out IPAddress address);
-            
+
             lock (modelLock)
             {
                 if (!success)
@@ -86,13 +85,15 @@ namespace OneClickDesktop.VirtualizationServer
                     m.AssignAddress(new MachineAddress(address.MapToIPv4().ToString()));
                     logger.Info($"Domain {request.DomainName} startup succeded.");
                 }
+
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
 
             return null;
         }
-        
+
         #region Request processing
+
         private static void ProcessDomainStartupRequest(DomainStartupRDTO request)
         {
             if (request == null)
@@ -100,7 +101,7 @@ namespace OneClickDesktop.VirtualizationServer
                 logger.Warn($"DomainStartupMessage was broken - data deserialisation or conversion failed");
                 return;
             }
-            
+
             logger.Info($"Processing DomainStartupRequest {JsonSerializer.Serialize(request)}");
             lock (modelLock)
             {
@@ -119,13 +120,20 @@ namespace OneClickDesktop.VirtualizationServer
                     return;
                 }
                 
+                if (!runningServices.ModelManager.CanServerRunMachine(resources))
+                {
+                    logger.Warn(
+                        $"There is not enough resources to run machine of type {request.DomainType}. Skipping request");
+                    return;
+                }
+
                 runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
                 Task.Run(() => AsyncDomainStartup(request));
 
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
         }
-        
+
         private static void ProcessDomainShutdownRequest(DomainShutdownRDTO request)
         {
             if (request == null)
@@ -133,7 +141,7 @@ namespace OneClickDesktop.VirtualizationServer
                 logger.Warn($"DomainShutdownMessage was broken - data deserialisation or conversion failed");
                 return;
             }
-            
+
             logger.Info($"Processing DomainShutdownRequest {JsonSerializer.Serialize(request)}");
             lock (modelLock)
             {
@@ -159,13 +167,14 @@ namespace OneClickDesktop.VirtualizationServer
 
                 var session = runningServices.ModelManager.GetSessionForMachine(machine.Name);
                 runningServices.ClientHeartbeat.RemoveQueue(session.SessionGuid.ToString());
-                runningServices.ModelManager.DeleteSession(session.SessionGuid);
+                session.DetachMachine();
 
                 runningServices.ModelManager.DeleteMachine(request.DomainName);
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+                runningServices.ModelManager.DeleteSession(session.SessionGuid);
             }
         }
-        
+
         private static void ProcessSessionCreationRequest(SessionCreationRDTO request)
         {
             if (request == null)
@@ -173,10 +182,18 @@ namespace OneClickDesktop.VirtualizationServer
                 logger.Warn($"SessionCreationMessage was broken - data deserialisation or conversion failed");
                 return;
             }
-            
+
             logger.Info($"Processing SessionCreationRequest {JsonSerializer.Serialize(request)}");
             lock (modelLock)
             {
+                //Jeżeli sesja jest w grupie anulowanych - ignoruj prośbę
+                var localSession = runningServices.ModelManager.GetSession(request.PartialSession.SessionGuid);
+                if (localSession?.SessionState == SessionState.Cancelled)
+                {
+                    logger.Info($"Ignoring session creation of cancelled localSession");
+                    return;
+                }
+
                 var machine = runningServices.ModelManager.GetMachine(request.DomainName);
                 if (machine == null)
                 {
@@ -222,13 +239,49 @@ namespace OneClickDesktop.VirtualizationServer
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
         }
+
+        private static void ProcessSessionCancelRequest(SessionCancelRDTO request)
+        {
+            if (request == null)
+            {
+                logger.Warn($"SessionCancelMessage was broken - data deserialisation or conversion failed");
+                return;
+            }
+
+            logger.Info("Processing SessionCancelRequest");
+            lock (modelLock)
+            {
+                var session = runningServices.ModelManager.GetSession(request.SessionGuid);
+
+                if (session == null)
+                {
+                    logger.Debug("Ignoring unknown session cancelation");
+                    return;
+                }
+
+                if (session.SessionState == SessionState.Cancelled)
+                {
+                    logger.Debug("Ignoring already canceled session");
+                    return;
+                }
+
+                session.SessionState = SessionState.Cancelled;
+
+                if (session.CorrelatedMachine?.State is MachineState.Occupied or MachineState.Reserved)
+                    session.CorrelatedMachine.State = MachineState.Free;
+
+                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+            }
+        }
+
         #endregion
 
         #region ClientHeartbeat handler
+
         private static void HandleMissing(object sender, string queue)
         {
             logger.Info($"Processing missing queue {queue}");
-            
+
             if (!Guid.TryParse(queue, out var sessionGuid))
             {
                 logger.Warn("Cannot parse queue name to session guid");
@@ -246,11 +299,11 @@ namespace OneClickDesktop.VirtualizationServer
             session.CorrelatedMachine.State = MachineState.WaitingForShutdown;
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
-        
+
         private static void HandleFound(object sender, string queue)
         {
             logger.Info($"Processing found queue {queue}");
-            
+
             if (!Guid.TryParse(queue, out var sessionGuid))
             {
                 logger.Warn("Cannot parse queue name to session guid");
@@ -268,8 +321,11 @@ namespace OneClickDesktop.VirtualizationServer
             session.CorrelatedMachine.State = MachineState.Occupied;
             runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
         }
+
         #endregion
-        
+
+        #region Event handlers
+
         /// <summary>
         /// Metoda wywoływana w przypadku otrzymania wiadomości z kolejki wspólnej lub bezpośredniej.
         /// W aktualnym stanie systemu nie ma znaczenia skąd przyszła wiadomość. Można to łatwo zmienić modyfikując konstruktor.
@@ -279,7 +335,8 @@ namespace OneClickDesktop.VirtualizationServer
         /// <param name="args">Dane otrzymane w kolejce</param>
         private static void ConsumeOverseerRequests(object sender, MessageEventArgs args)
         {
-            logger.Debug($"Received message from {args.RabbitMessage.SenderIdentifier} of type {DomainStartupMessage.MessageTypeName}");
+            logger.Debug(
+                $"Received message from {args.RabbitMessage.SenderIdentifier} of type {DomainStartupMessage.MessageTypeName}");
             switch (args.RabbitMessage.Type)
             {
                 case DomainStartupMessage.MessageTypeName:
@@ -293,6 +350,10 @@ namespace OneClickDesktop.VirtualizationServer
                 case SessionCreationMessage.MessageTypeName:
                     SessionCreationRDTO sessionCreation = args.RabbitMessage.Body as SessionCreationRDTO;
                     ProcessSessionCreationRequest(sessionCreation);
+                    break;
+                case SessionCancelMessage.MessageTypeName:
+                    SessionCancelRDTO sessionCancel = args.RabbitMessage.Body as SessionCancelRDTO;
+                    ProcessSessionCancelRequest(sessionCancel);
                     break;
                 case ModelReportMessage.MessageTypeName:
                     ProcessModelReportRequest();
@@ -312,9 +373,11 @@ namespace OneClickDesktop.VirtualizationServer
             //Jednak my się tym nie przejmujemy - w sensie taki błąd jest dla nas akceptowalny.
             //liczymy sekundy a nie milisekundy
             receiveCommandTimer.Enabled = false;
-            receiveCommandTimer.Stop();//reset
-            receiveCommandTimer.Start();//reset
+            receiveCommandTimer.Stop(); //reset
+            receiveCommandTimer.Start(); //reset
             receiveCommandTimer.Enabled = true;
         }
+
+        #endregion
     }
 }

@@ -57,6 +57,9 @@ namespace OneClickDesktop.VirtualizationServer
                     };
 
                     exitSemaphore.WaitOne();
+                    
+                    //cleanup machines on gentle shutdown
+                    services.VirtualizationManager.DomainCleanupOnShutdown(services.ModelManager.GetMachineNames());
                 }
             }
             catch (Exception ex)

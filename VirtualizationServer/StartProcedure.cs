@@ -70,9 +70,9 @@ namespace OneClickDesktop.VirtualizationServer
             RunningServices res = new RunningServices();
             try
             {
-                res.ClientHeartbeat = PrepareClientHeartbeat(systemConfig);
                 res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
                 res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
+                res.ClientHeartbeat = PrepareClientHeartbeat(systemConfig);
                 res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);
 
                 logger.Info("First time brodcast model to overseers");
@@ -80,6 +80,7 @@ namespace OneClickDesktop.VirtualizationServer
             }
             catch (BrokerConnectionException e)//Przypadek błednej komunikacji z brokerem
             {
+                //TODO: brak podanego adresu dla ktorego wystapil blad (internal czy external rabbit?)
                 res.Dispose();
                 logger.Fatal("Cannot connect with broker. Server cannot operate. Is there any broker working over given address?");
                 throw;
