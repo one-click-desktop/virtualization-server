@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
+using CommandLine.Text;
 using Microsoft.Extensions.Configuration;
+using NLog.Fluent;
 using OneClickDesktop.VirtualizationServer.Configuration;
 
 namespace OneClickDesktop.VirtualizationServer
@@ -16,12 +20,12 @@ namespace OneClickDesktop.VirtualizationServer
 
         private static Semaphore exitSemaphore;
 
-        private static (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) ParseConfiguration()
+        private static (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) ParseConfiguration(string configFolderPath)
         {
             
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddIniFile("config/virtsrv.ini")//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: config/virtsrv.ini)
+                .AddIniFile(Path.Join(configFolderPath, "virtsrv.ini"))
                 .Build();
 
 
@@ -29,17 +33,25 @@ namespace OneClickDesktop.VirtualizationServer
             VirtSrvConfiguration systemConfig = virtSrvSection.Get<VirtSrvConfiguration>();
             var resourcesHeaderSection = config.GetSection("ServerResources");
             ResourcesHeaderConfiguration resourcesHeader = resourcesHeaderSection.Get<ResourcesHeaderConfiguration>();
-            ResourcesConfiguration resourcesConfig = new ResourcesConfiguration(resourcesHeader, Path.Join(AppDomain.CurrentDomain.BaseDirectory, "config"));//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: config/virtsrv.ini)
-            
+            ResourcesConfiguration resourcesConfig = new ResourcesConfiguration(resourcesHeader, configFolderPath);
+
             return (systemConfig, resourcesConfig);
         }
 
-        public static void Main()
+        static void Main(string[] args)
+        {
+            Options parsedArgs;
+            var parseResult = Parser.Default.ParseArguments<Options>(args);
+            parseResult.WithParsed(RunOptions);
+            parseResult.WithNotParsed(errs => HandleParseError(parseResult, errs));
+        }
+        static void RunOptions(Options opts)
         {
             try
             {
                 //Wczytaj plik konfiguracyjny
-                (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) = ParseConfiguration();
+                (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) =
+                    ParseConfiguration(Path.GetFullPath(opts.ConfigurationFolderPath));
 
                 //Wystartuj wszystkie potrzebne servicy
                 services = StartProcedure.InitializeVirtualizationServer(systemConfig, resourcesConfig);
@@ -75,6 +87,14 @@ namespace OneClickDesktop.VirtualizationServer
                 logger.Info("Server has gracefully stopped");
                 NLog.LogManager.Shutdown();
             }
+        }
+        static void HandleParseError<T>(ParserResult<T> result, IEnumerable<Error> errs)
+        {
+            var builder = SentenceBuilder.Create();
+            var errorMessages = HelpText.RenderParsingErrorsTextAsLines(result, builder.FormatError, builder.FormatMutuallyExclusiveSetErrors, 1);
+            
+            foreach (string s in errorMessages)
+                Console.Error.WriteLine(s);
         }
     }
 }
