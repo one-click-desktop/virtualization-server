@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using NLog;
 using OneClickDesktop.BackendClasses.Communication;
 using OneClickDesktop.BackendClasses.Model.Resources;
-using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
+using OneClickDesktop.VirtualizationServer.Configuration;
 using OneClickDesktop.VirtualizationServer.Services;
 using OneClickDesktop.RabbitModule.Common.Exceptions;
 using OneClickDesktop.RabbitModule.VirtualizationServer;
+using OneClickDesktop.VirtualizationServer.Configuration;
 
 namespace OneClickDesktop.VirtualizationServer
 {
@@ -35,11 +36,8 @@ namespace OneClickDesktop.VirtualizationServer
         
         private static ModelManager PrepareModelManager(string directQueueName, ResourcesConfiguration resourcesConfig)
         {
-            ServerResources totalResources = new ServerResources(4096, 4, 200, new List<GpuId>());//[TODO][CONFIG] Wynieść do konfiguracji!
-            Dictionary<string, TemplateResources> templates = new Dictionary<string, TemplateResources>();
-            templates["cpu"] = new TemplateResources(2048, 4, 20, false);//[TODO][CONFIG] Wynieść do konfiguracji!
-            
-            return new ModelManager(directQueueName, totalResources, templates);
+            return new ModelManager(directQueueName,
+                resourcesConfig.GetServerResources(), resourcesConfig.GetTemplateResources());
         }
 
         private static OverseersCommunication PrepareOverseersCommunication(VirtSrvConfiguration systemConfig)

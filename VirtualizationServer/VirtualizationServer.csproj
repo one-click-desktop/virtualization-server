@@ -25,7 +25,19 @@
       <AdditionalFiles Include="NLog.config">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </AdditionalFiles>
-	  <None Include="virtsrv.ini">
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="config\virtsrv.ini">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config\cpu_memory_template.ini">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config\cpu_template.ini">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="config\gpu_template.ini">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

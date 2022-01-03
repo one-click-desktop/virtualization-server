@@ -1,9 +1,10 @@
 ﻿using System;
+using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
-using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationParsers;
+using OneClickDesktop.VirtualizationServer.Configuration;
 
 namespace OneClickDesktop.VirtualizationServer
 {
@@ -20,15 +21,17 @@ namespace OneClickDesktop.VirtualizationServer
             
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddIniFile("virtsrv.ini")//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: virtsrv.ini)
-                //.AddIniFile("resources.ini")//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: resources.ini)
+                .AddIniFile("config/virtsrv.ini")//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: config/virtsrv.ini)
                 .Build();
 
 
-            var section = config.GetSection("OneClickDesktop");
-            VirtSrvConfiguration systemConfig = section.Get<VirtSrvConfiguration>();
-
-            return (systemConfig, null);
+            var virtSrvSection = config.GetSection("OneClickDesktop");
+            VirtSrvConfiguration systemConfig = virtSrvSection.Get<VirtSrvConfiguration>();
+            var resourcesHeaderSection = config.GetSection("ServerResources");
+            ResourcesHeaderConfiguration resourcesHeader = resourcesHeaderSection.Get<ResourcesHeaderConfiguration>();
+            ResourcesConfiguration resourcesConfig = new ResourcesConfiguration(resourcesHeader, Path.Join(AppDomain.CurrentDomain.BaseDirectory, "config"));//[TODO][ARGS] Wynieść ścieżke do parametrów programu(default: config/virtsrv.ini)
+            
+            return (systemConfig, resourcesConfig);
         }
 
         public static void Main()

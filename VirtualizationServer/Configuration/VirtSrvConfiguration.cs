@@ -1,6 +1,6 @@
 using System.Configuration;
 
-namespace OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses
+namespace OneClickDesktop.VirtualizationServer.Configuration
 {
     /// <summary>
     /// Configuration for OneClickDesktop system from Virtualization Server perspective

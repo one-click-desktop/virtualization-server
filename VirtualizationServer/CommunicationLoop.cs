@@ -11,7 +11,7 @@ using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.RabbitModule.Common.EventArgs;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
-using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
+using OneClickDesktop.VirtualizationServer.Configuration;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer

@@ -8,7 +8,7 @@ using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.VirtualizationLibrary.Libvirt;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
-using OneClickDesktop.VirtualizationServer.Configuration.ConfigurationClasses;
+using OneClickDesktop.VirtualizationServer.Configuration;
 
 namespace OneClickDesktop.VirtualizationServer.Services
 {
@@ -62,9 +62,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     resource.CpuCores
                 );
                 vagrant.VagrantUp(parameters);
-                
-                //Thread.Sleep(5000);
-                
+
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
                 var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
 
