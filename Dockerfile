@@ -13,7 +13,8 @@ RUN dotnet publish --no-restore -f net5.0 -c Release -o /app/publish
 FROM base AS final
 
 #Install libvirt libraries
-RUN apt-get update && apt-get install libvirt-clients -y
+RUN apt-get update && apt-get install libvirt-clients vagrant -y
+RUN vagrant plugin install vagrant-libvirt
 
 WORKDIR /app
 COPY --from=publish /app/publish .
