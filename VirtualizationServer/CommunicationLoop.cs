@@ -52,6 +52,12 @@ namespace OneClickDesktop.VirtualizationServer
             receiveCommandTimer.Enabled = true;
             receiveCommandTimer.Elapsed += (obj, args) =>
             {
+                if (services.ModelManager.HasRunningSessions())
+                {
+                    logger.Info("Timeout on message from overseers - ignore since server has running sessions");
+                    return;
+                }
+                
                 logger.Info("Timeout on message from overseers - stopping server.");
                 exitSemaphore.Release();
             };
