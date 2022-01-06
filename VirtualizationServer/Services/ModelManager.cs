@@ -94,5 +94,10 @@ namespace OneClickDesktop.VirtualizationServer.Services
             var res = model.FreeResources - template;
             return !(res.Memory < 0 || res.CpuCores < 0 || res.Storage < 0 || (template.AttachGpu && model.FreeResources.GpuCount < 1));
         }
+
+        public bool HasRunningSessions()
+        {
+            return model.Sessions.Values.Any(session => session.SessionState == SessionState.Running);
+        }
     }
 }
