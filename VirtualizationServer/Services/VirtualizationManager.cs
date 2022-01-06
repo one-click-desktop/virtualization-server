@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
-using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
-using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.VirtualizationLibrary.Libvirt;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
 using OneClickDesktop.VirtualizationServer.Configuration;
@@ -18,7 +15,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
     public class VirtualizationManager: IDisposable
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
+        private object vagrantLock = new object();
+        
         private VirtSrvConfiguration conf;
         private LibvirtWrapper libvirt;
         private VagrantWrapper vagrant;
@@ -61,19 +59,25 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     resource.Memory,
                     resource.CpuCores
                 );
-                vagrant.VagrantUp(parameters);
+                lock (vagrantLock)
+                {
+                    vagrant.VagrantUp(parameters);
+                }
 
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
-                var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
-
-                if (addresses == null || addresses.FirstOrDefault(ip => bridgedNetwork.Contains(ip)) == null)
+                address = TryGetDomainAddress(domainName, bridgedNetwork);
+                if (address == null)
                 {
-                    logger.Warn($"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
-                    vagrant.BestEffortVagrantDestroy(parameters);
+                    lock (vagrantLock)
+                    {
+                        logger.Warn(
+                            $"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
+                        vagrant.BestEffortVagrantDestroy(parameters);
+                    }
+
                     return false;
                 }
                 
-                address = addresses.FirstOrDefault(ip => bridgedNetwork.Contains(ip));
                 return true;
             }
             catch (VagrantException e)
@@ -81,6 +85,20 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 logger.Error(e, "Vagrant up returned with error");
                 return false;
             }
+        }
+
+        private IPAddress TryGetDomainAddress(string domainName, IPNetwork bridgedNetwork, int askCount = 5, int askIntervalMs = 500)
+        {
+            IPAddress result = null;
+            int askCounter = 0;
+            
+            while (result == null && askCounter < askCount)
+            {
+                var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
+                result = addresses?.FirstOrDefault(ip => bridgedNetwork.Contains(ip));
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -108,7 +126,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     domainName,
                     conf.BridgeInterfaceName
                 );
-                vagrant.VagrantDestroy(parameters);
+                lock (vagrantLock)
+                {
+                    vagrant.VagrantDestroy(parameters);
+                }
+
                 return true;
             }
             catch (VagrantException e)

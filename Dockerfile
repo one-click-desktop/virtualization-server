@@ -5,10 +5,10 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet restore 
-RUN dotnet build --no-restore -f net5.0 -c Release -o /app/build VirtualizationServer/VirtualizationServer.csproj
+RUN dotnet build --no-restore -f net5.0 -o /app/build VirtualizationServer/VirtualizationServer.csproj
 
 FROM build AS publish
-RUN dotnet publish --no-restore -f net5.0 -c Release -o /app/publish VirtualizationServer/VirtualizationServer.csproj
+RUN dotnet publish --no-restore -f net5.0 -o /app/publish VirtualizationServer/VirtualizationServer.csproj
 
 FROM base AS final
 
