@@ -112,6 +112,7 @@ puts conf.to_str
 
 #Parametrized vagrant configuration
 Vagrant.configure(2) do |config|
+  config.ssh.password = "vagrant"
   config.vm.define conf.vm_name
   config.vm.hostname = conf.hostname
   config.vm.network :public_network,
