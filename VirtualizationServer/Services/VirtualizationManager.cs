@@ -67,7 +67,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 logger.Info("Vagrant up command finished");
 
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
-                address = TryGetDomainAddress(domainName, bridgedNetwork);
+                address = TryGetDomainAddress(domainName, bridgedNetwork, 20);
                 if (address == null)
                 {
                     lock (vagrantLock)
@@ -89,7 +89,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             }
         }
 
-        private IPAddress TryGetDomainAddress(string domainName, IPNetwork bridgedNetwork, int askCount = 5, int askIntervalMs = 500)
+        private IPAddress TryGetDomainAddress(string domainName, IPNetwork bridgedNetwork, int askCount = 10, int askIntervalMs = 500)
         {
             IPAddress result = null;
             int askCounter = 0;
