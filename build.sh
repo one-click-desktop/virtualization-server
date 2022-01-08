@@ -1,6 +1,8 @@
 #! /bin/bash
 
-docker build runtime_container -t one-click-desktop/virtualization-server-runtime
+cd runtime_container
+./build.sh
+cd ..
 docker build . -t one-click-desktop/virtualization-server
 
 # On running remember about:
