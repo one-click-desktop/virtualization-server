@@ -6,6 +6,10 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
     public class ResourcesTemplateConfiguration
     {
         /// <summary>
+        /// Human readable machine type name. If not set template name will be used.
+        /// </summary>
+        public string HumanReadableName { get; set; } = null;
+        /// <summary>
         /// Number of logical cores required to run machine
         /// </summary>
         public int Cpus { get; set; } = 2;

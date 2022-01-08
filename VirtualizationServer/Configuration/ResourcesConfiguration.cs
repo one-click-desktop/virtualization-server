@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
+using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
 
 namespace OneClickDesktop.VirtualizationServer.Configuration
@@ -50,8 +51,17 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
             return templates.ToDictionary(
                 d => d.Item1,
                 d =>
-                    new TemplateResources(d.Item2.Memory, d.Item2.Cpus, d.Item2.Storage,
-                        false));//TODO: GPUid nie ma sensu tutaj - potrzeba nazwy wlasnej gpu
+                    new TemplateResources(
+                        new MachineType()
+                        {
+                            TechnicalName = d.Item1,
+                            HumanReadableName = d.Item2.HumanReadableName
+                        },
+                        d.Item2.Memory,
+                        d.Item2.Cpus,
+                        d.Item2.Storage,
+                        false)//TODO: GPUid nie ma sensu tutaj - potrzeba nazwy wlasnej gpu
+                );
         }
     }
 }

@@ -214,7 +214,7 @@ namespace OneClickDesktop.VirtualizationServer
                     return;
                 }
 
-                if (machine.MachineType.Type != request.PartialSession.SessionType.Type)
+                if (machine.MachineType.TechnicalName != request.PartialSession.SessionType.Type)
                 {
                     logger.Info(
                         $"Requesting machine {request.DomainName} for session type {request.PartialSession.SessionType.Type} but it cannot handle it, machine type is {machine.MachineType}");

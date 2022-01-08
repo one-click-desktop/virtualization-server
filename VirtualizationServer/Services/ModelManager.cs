@@ -69,7 +69,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         public TemplateResources GetTemplateResources(MachineType type)
         {
-            if (!model.TemplateResources.TryGetValue(type.Type, out TemplateResources res))
+            if (!model.TemplateResources.TryGetValue(type.TechnicalName, out TemplateResources res))
                 return null;
             return res;
         }
