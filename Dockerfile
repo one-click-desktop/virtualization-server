@@ -15,5 +15,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 COPY ["assets/entry_point.sh", "entry_point.sh"]
+RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
 
 ENTRYPOINT ["/bin/bash", "entry_point.sh"]
