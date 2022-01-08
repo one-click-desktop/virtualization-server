@@ -63,6 +63,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 {
                     vagrant.VagrantUp(parameters);
                 }
+                logger.Info("Vagrant up command finished");
 
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
                 address = TryGetDomainAddress(domainName, bridgedNetwork);
@@ -95,7 +96,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
             while (result == null && askCounter < askCount)
             {
                 var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
-                result = addresses?.FirstOrDefault(ip => bridgedNetwork.Contains(ip));
+                if (addresses?.Any() ?? false)
+                    result = addresses?.FirstOrDefault(bridgedNetwork.Contains);
             }
 
             return result;
