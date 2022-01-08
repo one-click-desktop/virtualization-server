@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.VirtualizationLibrary.Libvirt;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
@@ -98,6 +99,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
                 if (addresses?.Any() ?? false)
                     result = addresses?.FirstOrDefault(bridgedNetwork.Contains);
+                Thread.Sleep(askIntervalMs);
+                askCounter++;
             }
 
             return result;
