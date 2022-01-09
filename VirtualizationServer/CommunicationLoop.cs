@@ -67,13 +67,13 @@ namespace OneClickDesktop.VirtualizationServer
             runningServices.ClientHeartbeat.Found += HandleFound;
         }
 
-        private static Action AsyncDomainStartup(DomainStartupRDTO request)
+        private static Action AsyncDomainStartup(DomainStartupRDTO request, GpuId attachedGPU = null)
         {
             try
             {
                 bool success = runningServices.VirtualizationManager
                     .DomainStartup(request.DomainName,
-                        runningServices.ModelManager.GetTemplateResources(request.DomainType), out IPAddress address);
+                        runningServices.ModelManager.GetTemplateResources(request.DomainType), attachedGPU, out IPAddress address);
                 logger.Info("Waiting domain async startup for model lock");
                 lock (modelLock)
                 {
@@ -141,7 +141,15 @@ namespace OneClickDesktop.VirtualizationServer
                 }
 
                 runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
-                Task.Run(() => AsyncDomainStartup(request));
+                if (resources.AttachGpu)
+                {
+                    GpuId gpuToAttach = runningServices.ModelManager.GetFreeGPU();
+                    Task.Run(() => AsyncDomainStartup(request, gpuToAttach));
+                }
+                else
+                {
+                    Task.Run(() => AsyncDomainStartup(request));
+                }
 
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }

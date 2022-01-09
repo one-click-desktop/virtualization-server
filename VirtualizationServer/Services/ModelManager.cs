@@ -99,5 +99,12 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             return model.Sessions.Values.Any(session => session.SessionState == SessionState.Running);
         }
+
+        public GpuId GetFreeGPU()
+        {
+            if (model.FreeResources.GpuCount > 0)
+                return model.FreeResources.GpuIds.First();
+            return null;
+        }
     }
 }
