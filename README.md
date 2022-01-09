@@ -2,6 +2,8 @@
 
 Virtualization Server module for OneClickDesktop. Responsible for hosting virtual machines and monitoring user connection status.
 
+> ⚠️ Running more than one instance of application per host is highly discouraged. Vagrant can handle only one call at a time. Subsequent calls will return errors and can cause Vagrant to crash.
+
 ## Requirements
 
 - [.NET 5](https://dotnet.microsoft.com/en-us/download/dotnet/5.0)
