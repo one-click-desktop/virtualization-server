@@ -207,6 +207,8 @@ end
 #Parametrized vagrant configuration with gpu
 Vagrant.configure(2) do |config|
   config.ssh.password = "vagrant"
+  config.nfs.functional = false
+  config.vm.synced_folder '.', '/vagrant', disabled: true
   config.vm.define conf.vm_name
   config.vm.hostname = conf.hostname
   config.vm.network :public_network,
