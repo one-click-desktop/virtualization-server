@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using OneClickDesktop.BackendClasses.Model.Resources;
 
 namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 {
@@ -111,6 +112,26 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 
         public BridgeParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
         { }
+    }
+    
+    public class GpuParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "GPU";
+        public const string CLI_SUFFIX = "gpu";
+
+        public GpuParameter(GpuId gpuAddresses) : base("", ENV_SUFFIX, CLI_SUFFIX)
+        {
+            StringBuilder val = new StringBuilder();
+
+            val.Append(gpuAddresses.PciIdentifiers.First());
+            foreach (PciAddressId addr in gpuAddresses.PciIdentifiers.Skip(1))
+            {
+                val.Append(",");
+                val.Append(addr);
+            }
+
+            value = val.ToString(); 
+        }
     }
 
     /// <summary>

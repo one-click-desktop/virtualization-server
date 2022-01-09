@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Configuration;
 using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
+using OneClickDesktop.BackendClasses.Model.Types;
 
 namespace OneClickDesktop.VirtualizationServer.Configuration
 {
@@ -12,14 +13,27 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
     /// </summary>
     public class ResourcesConfiguration
     {
+        private const string GPUSectionPrefix = "ServerGPU.";
+        private const string GPUAddressPrefix = "Address_";
+        private const string AddressCountKey = "AddressCount";
+
+        private IConfigurationRoot baseConfig;    
         private ResourcesHeaderConfiguration header;
         private List<(string, ResourcesTemplateConfiguration)> templates = new List<(string, ResourcesTemplateConfiguration)>();
+        private List<GpuId> attachedGpus = new List<GpuId>();
 
-        public ResourcesConfiguration(ResourcesHeaderConfiguration header,
-            string basePath)
+        public ResourcesConfiguration(IConfigurationRoot baseConfig, string basePath)
         {
-            this.header = header;
-            
+            this.baseConfig = baseConfig;
+            var resourcesHeaderSection = baseConfig.GetSection("ServerResources");
+            this.header = resourcesHeaderSection.Get<ResourcesHeaderConfiguration>();
+
+            ParseMachineTemplates(basePath);
+            ParseServerGPUs(header.GPUsCount);
+        }
+
+        private void ParseMachineTemplates(string basePath)
+        {
             IConfigurationBuilder configDraft = new ConfigurationBuilder()
                 .SetBasePath(basePath);
             foreach (string template_name in header.GetMachineTemplates())
@@ -33,13 +47,42 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
             }
         }
 
+        private T GetValueFromSection<T>(IConfigurationSection section, string key)
+        {
+            T val =  section.GetValue<T>(key);
+            if (EqualityComparer<T>.Default.Equals(default(T), val))
+                throw new ArgumentException($"Missing key {section.Key}:{key} in configuration file");
+            return val;
+        }
+        
+        private void ParseServerGPUs(int gpuCount)
+        {
+            for (int i = 1; i <= gpuCount; ++i)
+            {
+                string sectionName = GPUSectionPrefix + i.ToString();
+                var section = baseConfig.GetSection(sectionName);
+
+                if (section.GetChildren().Count() == 0)
+                    throw new ArgumentException($"Missing section {sectionName} in configuration file.");
+
+                int addressCount = GetValueFromSection<int?>(section, AddressCountKey) ?? -1;
+                List<PciAddressId> parsedAddrs = new List<PciAddressId>();
+                for (int addri = 1; addri <= addressCount; ++addri)
+                {
+                    string addr = GetValueFromSection<string>(section, GPUAddressPrefix + addri.ToString());
+                    parsedAddrs.Add(PciAddressId.Parse(addr));
+                }
+                attachedGpus.Add(new GpuId(parsedAddrs));
+            }
+        }
+
         /// <summary>
         /// Get total server resources
         /// </summary>
         /// <returns>Server resources in model format</returns>
         public ServerResources GetServerResources()
         {
-            return new ServerResources(header.Memory, header.Cpus, header.Storage, Array.Empty<GpuId>());
+            return new ServerResources(header.Memory, header.Cpus, header.Storage, attachedGpus);
         }
 
         /// <summary>
@@ -60,7 +103,7 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
                         d.Item2.Memory,
                         d.Item2.Cpus,
                         d.Item2.Storage,
-                        false)//TODO: GPUid nie ma sensu tutaj - potrzeba nazwy wlasnej gpu
+                        false)
                 );
         }
     }

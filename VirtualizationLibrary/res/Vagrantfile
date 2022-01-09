@@ -1,25 +1,97 @@
 #!/usr/bin/ruby
 
-#Dobry do testów jest obraz d3atiq/ubuntu-18.04-rdp-base
+# Dobry do testów jest obraz d3atiq/ubuntu-18.04-rdp-base
+# Przykładowe wywołanie:
+# vagrant --bridge="br0" --boxname="generic/alpine38" --vm-name="alpine-test" --cpus="2" --memory="512" --hostname="alpine-test" --gpu="0000:03:00.0,0000:03:00.1" up
 
-#Jest kilka uwag do obraxzu vagrantowego:
-#1. Potrzebny jest qemu-ga na guescie
-#2. Potrzeba skonfigurowanego xrdp w srodku
+# Jest kilka uwag do obraxzu vagrantowego:
+# 1. Potrzebny jest qemu-ga na guescie
+# 2. Potrzeba skonfigurowanego xrdp w srodku
 
 
 require 'getoptlong'
+
+# "args": ["--bridge=\"br0\"", "--boxname=\"generic/alpine38\"", "--vm-name=\"alpine-test\"","--cpus=\"2\"",
+# "--memory=\"512\"", "--hostname=\"alpine-test\"", "--gpu=\"0000:03:00.0,0000:03:00.1\""],
+
+class PCIAddress
+
+  def initialize(string_addr)
+    @original_address = string_addr
+
+    first_split = string_addr.split(':', 3)
+    @domain = first_split[0]
+    @bus = first_split[1]
+    second_split = first_split[2].split('.')
+    @slot = second_split[0]
+    @function = second_split[1]
+  end
+
+  def original_address
+    return @original_address
+  end
+
+  def domain
+    return "0x#{@domain}"
+  end
+
+  def bus
+    return "0x#{@bus}"
+  end
+
+  def slot
+    return "0x#{@slot}"
+  end
+
+  def function
+    return "0x#{@function}"
+  end
+
+  def to_s
+    return "domain:[#{domain}],bus:[#{bus}],slot:[#{slot}],function:[#{function}]"
+  end
+end
+
+class GPUGroup
+
+  def initialize(addresses_string)
+    @addresses = Array.new()
+    splitted = addresses_string.split(',')
+
+    splitted.each do |addr|
+      @addresses.push(PCIAddress.new(addr))
+    end
+  end
+
+  def address_count
+    return @addresses.length
+  end
+
+  def addresses
+    @addresses
+  end
+
+  def to_s
+    res = ''
+    @addresses.each do |addr|
+      res = res + addr.to_s + ';'
+    end
+    return res
+  end
+end
 
 class Configuration 
     @@ENV_PREFIX = 'OCD_'
     
     def initialize
        @opts = GetoptLong.new(
-         [ '--boxname',        GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--vm-name',        GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--cpus',        GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--memory',        GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--boxname',         GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--vm-name',         GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--cpus',            GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--memory',          GetoptLong::REQUIRED_ARGUMENT ],
          [ '--hostname',        GetoptLong::OPTIONAL_ARGUMENT ],
-         [ '--bridge',        GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--bridge',          GetoptLong::REQUIRED_ARGUMENT ],
+         [ '--gpu',             GetoptLong::OPTIONAL_ARGUMENT ],
        )
        set_default_values
     end
@@ -32,6 +104,7 @@ class Configuration
         puts "memory: #{@memory}"
         puts "bridge: #{@bridge}"
         puts "hostname: #{@hostname}"
+        puts "gpu: #{@gpu.to_s}"
     end
     
     def parse_configuration
@@ -63,6 +136,14 @@ class Configuration
         @memory
     end
     
+    def gpu
+        @gpu.addresses
+    end
+
+    def gpu_attached
+      return @gpu.address_count > 0
+    end
+    
     private
     
     def set_default_values
@@ -72,6 +153,7 @@ class Configuration
         @memory         = 512
         @hostname       = @vm_name
         @bridge         = 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
+        @gpu            = GPUGroup.new('')
     end
    
     def parse_environment
@@ -81,6 +163,10 @@ class Configuration
         @memory         = ENV[@@ENV_PREFIX+'MEMORY'] 
         @hostname       = ENV[@@ENV_PREFIX+'HOSTNAME']
         @bridge         = ENV[@@ENV_PREFIX+'BRIDGE'] 
+        if ENV[@@ENV_PREFIX+'GPU']
+          @gpu          = GPUGroup.new(ENV[@@ENV_PREFIX+'GPU']) 
+        end
+        
     end
    
     def parse_arguments
@@ -99,18 +185,26 @@ class Configuration
                 @boxname = arg
               when '--bridge'
                 @bridge = arg
+              when '--gpu'
+                @gpu = GPUGroup.new(arg)
             end
           end
           rescue
         end
     end
 end
-
 conf = Configuration.new
 conf.parse_configuration
 puts conf.to_str
 
-#Parametrized vagrant configuration
+if conf.gpu_attached
+  puts 'Attaching gpu'
+  conf.gpu.each do |addr|
+    puts "libvirt.pci :domain => #{addr.domain}, :bus => #{addr.bus}, :slot => #{addr.slot}, :function => #{addr.function}" 
+  end
+end
+
+#Parametrized vagrant configuration with gpu
 Vagrant.configure(2) do |config|
   config.ssh.password = "vagrant"
   config.vm.define conf.vm_name
@@ -130,6 +224,9 @@ Vagrant.configure(2) do |config|
     libvirt.memory = conf.memory
     libvirt.cpus = conf.cpus
     libvirt.uri = "qemu:///system" # deprecha - serwery wirtualizacji wcale nie sa potrzebne
+    libvirt.kvm_hidden = true
+    conf.gpu.each do |addr|
+      libvirt.pci :domain => addr.domain, :bus => addr.bus, :slot => addr.slot, :function => addr.function 
+    end
   end
-
 end

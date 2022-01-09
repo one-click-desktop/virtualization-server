@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text.Json;
 using NLog;
 using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
+using OneClickDesktop.BackendClasses.Model.Types;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer.Services
@@ -98,6 +98,13 @@ namespace OneClickDesktop.VirtualizationServer.Services
         public bool HasRunningSessions()
         {
             return model.Sessions.Values.Any(session => session.SessionState == SessionState.Running);
+        }
+
+        public GpuId GetFreeGPU()
+        {
+            if (model.FreeResources.GpuCount > 0)
+                return model.FreeResources.GpuIds.First();
+            return null;
         }
     }
 }

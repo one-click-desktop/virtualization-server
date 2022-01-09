@@ -25,7 +25,7 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// <summary>
         /// Wished model of GPU. Implisies that machine should has attached GPU on startup.
         /// </summary>
-        public string WishedGPU { get; set; } = null;
+        public bool AttachGPU { get; set; } = false;
 
     }
 }

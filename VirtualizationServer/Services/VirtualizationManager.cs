@@ -13,11 +13,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
     /// <summary>
     /// Klasa zarządza maszynami wirtualnymi działającymi pod pieczą systemu.
     /// </summary>
-    public class VirtualizationManager: IDisposable
+    public class VirtualizationManager : IDisposable
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private object vagrantLock = new object();
-        
+
         private VirtSrvConfiguration conf;
         private LibvirtWrapper libvirt;
         private VagrantWrapper vagrant;
@@ -43,7 +43,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
         /// true - operation succeeded
         /// false - operation failed
         /// </returns>
-        public bool DomainStartup(string domainName, TemplateResources resource, out IPAddress address)
+        public bool DomainStartup(string domainName, TemplateResources resource, GpuId attachedGPU,
+            out IPAddress address)
         {
             address = null;
             if (libvirt.DoesDomainActive(domainName))
@@ -60,10 +61,15 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     resource.Memory,
                     resource.CpuCores
                 );
+
+                if (attachedGPU != null && attachedGPU.PciIdentifiers.Count > 0)
+                    parameters.AddParameter(new GpuParameter(attachedGPU));
+
                 lock (vagrantLock)
                 {
                     vagrant.VagrantUp(parameters);
                 }
+
                 logger.Info("Vagrant up command finished");
 
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
@@ -79,7 +85,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
                     return false;
                 }
-                
+
                 return true;
             }
             catch (VagrantException e)
@@ -89,11 +95,12 @@ namespace OneClickDesktop.VirtualizationServer.Services
             }
         }
 
-        private IPAddress TryGetDomainAddress(string domainName, IPNetwork bridgedNetwork, int askCount = 10, int askIntervalMs = 500)
+        private IPAddress TryGetDomainAddress(string domainName, IPNetwork bridgedNetwork, int askCount = 10,
+            int askIntervalMs = 500)
         {
             IPAddress result = null;
             int askCounter = 0;
-            
+
             while (result == null && askCounter < askCount)
             {
                 var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
@@ -121,7 +128,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             if (!libvirt.DoesDomainExist(domainName))
                 return false;
-            
+
             try
             {
                 VagrantParameters parameters = new VagrantParameters
