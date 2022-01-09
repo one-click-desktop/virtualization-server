@@ -40,7 +40,6 @@ namespace OneClickDesktop.VirtualizationServer
 
         static void Main(string[] args)
         {
-            Options parsedArgs;
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             parseResult.WithParsed(RunOptions);
             parseResult.WithNotParsed(errs => HandleParseError(parseResult, errs));
