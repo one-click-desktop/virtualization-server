@@ -26,6 +26,8 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// Comma separated list of machine templates machines by server.
         /// </summary>
         public string MachineTypes { get; set; }
+        
+        public int GPUsCount { get; set; }
 
         /// <summary>
         /// Get list of machine templates based on <c>MachineTypes</c>.
