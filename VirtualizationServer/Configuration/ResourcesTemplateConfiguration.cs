@@ -20,7 +20,7 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// <summary>
         /// Amount of Storage required to run machine (in GiB)
         /// </summary>
-        public int Storage { get; set; }
+        public int Storage { get; set; } = 20;
 
         /// <summary>
         /// Wished model of GPU. Implisies that machine should has attached GPU on startup.

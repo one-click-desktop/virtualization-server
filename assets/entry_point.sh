@@ -1,3 +1,3 @@
 #! /bin/bash
 
-dotnet OneClickDesktop.VirtualizationServer.dll -c config/docker-test
+dotnet OneClickDesktop.VirtualizationServer.dll -c $CONFIG
