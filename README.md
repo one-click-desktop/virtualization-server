@@ -7,7 +7,23 @@ Virtualization Server module for OneClickDesktop. Responsible for hosting virtua
 ## Requirements
 
 - [.NET 5](https://dotnet.microsoft.com/en-us/download/dotnet/5.0)
-<!-- add libvirt and vagrant, maybe section about vagrant config? -->
+- [libvirt](https://libvirt.org/) - dynamic library and daemon running on system
+- [vagrant](vagrantup.com)
+
+## Dependecies
+
+Projects depends on modified [IDNT libvirt library](https://github.com/IDNT/AppBasics-Virtualization-Libvirt).
+So running application require dynamic library `libvirt.so` installed and running `libvirtd` daemon.
+
+## Building
+
+Application is created for .NET5.0.
+All references are defined in .csproj files.
+With dotnet5.0-sdk installed building application should be as easy as:
+```
+dotnet build VirtualizationServer.sln
+```
+But forked IDNT library should build for older frameworks and can be problematic to build.
 
 ## Configuration
 
@@ -69,16 +85,18 @@ To run app in docker:
 1. Run `build.sh` to create container.
 2. Run `docker run one-click-desktop/virtualization-server`. You need to add parameters specified below (configuration ones are optional).
 
+Remember that container won't run libvirt services! It has to be run on host system independently!
+
 ### Important parameters
 
-- Pass required libvirt volumes.
+- Pass required libvirt volumes. It let application from container communicate with libvirt daemon running on host machine.
 
   ```BASH
   -v /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
   -v /var/lib/libvirt/:/var/lib/libvirt/
   ```
 
-- Pass local user vagrant boxes directory.
+- Pass local user vagrant boxes directory. It will be used to store vagrant boxes between runs. Also updating boxes can be done from outside container.
 
   ```BASH
   -v ${HOME}/.vagrant.d/boxes/:/root/.vagrant.d/boxes/
