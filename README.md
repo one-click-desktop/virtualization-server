@@ -4,6 +4,21 @@ Virtualization Server module for OneClickDesktop. Responsible for hosting virtua
 
 > ⚠️ Running more than one instance of application per host is highly discouraged. Vagrant can handle only one call at a time. Subsequent calls will return errors and can cause Vagrant to crash.
 
+Table of content:
+- [OneClickDesktop Virtualization Server](#oneclickdesktop-virtualization-server)
+  - [Requirements](#requirements)
+  - [Dependencies](#dependencies)
+  - [Building](#building)
+  - [Creating Vagrant Box compatible with OneClickDesktop](#creating-vagrant-box-compatible-with-oneclickdesktop)
+  - [Passing PCI devices to system](#passing-pci-devices-to-system)
+  - [Configuration](#configuration)
+    - [OneClickDesktop](#oneclickdesktop)
+    - [ServerResources](#serverresources)
+    - [ServerGPU](#servergpu)
+    - [Template](#template)
+  - [Run inside container](#run-inside-container)
+    - [Important parameters](#important-parameters)
+
 ## Requirements
 
 - [.NET 5](https://dotnet.microsoft.com/en-us/download/dotnet/5.0)
@@ -11,7 +26,7 @@ Virtualization Server module for OneClickDesktop. Responsible for hosting virtua
 - [vagrant](https://www.vagrantup.com)
 - [ansible](https://www.ansible.com/)
 
-## Dependecies
+## Dependencies
 
 Projects depends on modified [IDNT libvirt library](https://github.com/IDNT/AppBasics-Virtualization-Libvirt).
 So running application require dynamic library `libvirt.so` installed and running `libvirtd` daemon.
