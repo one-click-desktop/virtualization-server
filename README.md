@@ -8,7 +8,8 @@ Virtualization Server module for OneClickDesktop. Responsible for hosting virtua
 
 - [.NET 5](https://dotnet.microsoft.com/en-us/download/dotnet/5.0)
 - [libvirt](https://libvirt.org/) - dynamic library and daemon running on system
-- [vagrant](vagrantup.com)
+- [vagrant](https://www.vagrantup.com)
+- [ansible](https://www.ansible.com/)
 
 ## Dependecies
 
@@ -24,6 +25,21 @@ With dotnet5.0-sdk installed building application should be as easy as:
 dotnet build VirtualizationServer.sln
 ```
 But forked IDNT library should build for older frameworks and can be problematic to build.
+
+## Creating Vagrant Box compatible with OneClickDesktop
+
+To run virtualization Server some Vagrant Box name should be passed.
+With system is supplied arch based libvirt box [smogork/archlinux-rdp](https://app.vagrantup.com/smogork/boxes/archlinux-rdp).
+It can be used as a template machine to make custom modifications.
+
+If you want to create custom box from scratch please read [basic requirements](https://www.vagrantup.com/docs/boxes/base) from hashicorp.
+In addition OneClickDesktop requires from box to:
+1. Have some desktop manager (XFCE is used in template box).
+2. Have RDP server ([xrdp](http://xrdp.org/) is used in template box)
+3. Get address from DHCP to every new connected network interface.
+4. Run `qemu-guest-agent` on virtual machine startup.
+
+To build vagrant box for libvirt provider please read `vagrant-libvirt` box creation [documentation](https://github.com/vagrant-libvirt/vagrant-libvirt#create-box).
 
 ## Passing PCI devices to system
 
@@ -54,7 +70,8 @@ Configuration used is specified on start with flag `-c`. By default configuratio
 - `OverseerCommunicationShutdownTimeout`: Shutdown timeout (in seconds) for communication with Overseer. If server won't receive any message from Overseer, it will go down after this time. Default value is `120` seconds.
 - `LibvirtUri`: Connection string to libvirt deamon. Default value is `qemu://system`.
 - `VagrantFilePath`: Path to parametrized Vagrantfile used for virtual machines management.
-- `VagrantboxUri`: URI to Vagrantbox used in system.
+- `PostStartupPlaybook`: Path to playbook provisioning machine after startup. Default value is `res/poststartup_playbook.yml`.
+- `VagrantboxUri`: URI to Vagrant Box used in system.
 - `BridgeInterfaceName`: Name of bridge interface for virtual machines. Default is `br0`.
 - `BridgedNetwork`: Address of bridged network (CIDR format).
 - `InternalRabbitMQHostname`: Hostname of internal RabbitMQ broker used for communication with overseers. Default value is `localhost`.
@@ -62,14 +79,14 @@ Configuration used is specified on start with flag `-c`. By default configuratio
 - `ExternalRabbitMQHostname`: Hostname of external RabbitMQ broker used for client connection monitoring. Default value is `localhost`.
 - `ExternalRabbitMQPort`: Port of external RabbitMQ broker used for client connection monitoring. Default value is `5673`.
 - `ClientHeartbeatChecksForMissing`: Amount of failed checks after which client is marked as missing/disconnected. Default is `2`.
-- `ClientHeartbeatChecksDelay`: Time (in miliseconds) between client connection state checks. Default is `10000`.
+- `ClientHeartbeatChecksDelay`: Time (in milliseconds) between client connection state checks. Default is `10000`.
 
 ### ServerResources
 
 - `Cpus`: Number of total CPU logical cores available for system. Default is `2`.
 - `Memory`: Amount of RAM available for system (in MiB). Default is `2048`.
 - `Storage`: Amount of storage available for system. (in GiB). Default is `100`.
-- `MachineTypes`: Comma separated list of machine type templates. Server will look for their configuration files in config folder with names matching machine type names with prefix `-template.ini`.
+- `MachineTypes`: Comma separated list of machine type templates. Server will look for their configuration files in config folder with names matching machine type names with suffix `_template.ini`. IMPORTANT! Template name must contains ONLY characters from regexp `[a-zA-Z0-9\-]`. Otherwise libvirt will report domain name error.
 - `GPUsCount`: Number of GPUs available for system.
 
 ### ServerGPU
