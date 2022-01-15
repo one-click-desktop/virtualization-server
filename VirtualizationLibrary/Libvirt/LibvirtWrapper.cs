@@ -30,7 +30,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Libvirt
         public IEnumerable<IPAddress> GetDomainsNetworkAddresses(string name)
         {
             LibvirtDomain dom = GetDomainByName(name);
-            return dom?.GetDomainNetworkAddresses();
+            var addrs = dom?.GetDomainNetworkAddresses();
+            return addrs;
         }
         
         /// <summary>

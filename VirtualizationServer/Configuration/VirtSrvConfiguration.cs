@@ -60,5 +60,10 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// Time between heartbeat checks (in ms)
         /// </summary>
         public int ClientHeartbeatChecksDelay { get; set; } = 10000;
+
+        /// <summary>
+        /// Path to playbook provisioning machine after startup.
+        /// </summary>
+        public string PostStartupPlaybook { get; set; } = "res/poststartup_playbook.yml";
     }
 }

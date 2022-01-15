@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,16 +32,14 @@ namespace OneClickDesktop.VirtualizationServer
 
             var virtSrvSection = config.GetSection("OneClickDesktop");
             VirtSrvConfiguration systemConfig = virtSrvSection.Get<VirtSrvConfiguration>();
-            var resourcesHeaderSection = config.GetSection("ServerResources");
-            ResourcesHeaderConfiguration resourcesHeader = resourcesHeaderSection.Get<ResourcesHeaderConfiguration>();
-            ResourcesConfiguration resourcesConfig = new ResourcesConfiguration(resourcesHeader, configFolderPath);
+            
+            ResourcesConfiguration resourcesConfig = new ResourcesConfiguration(config, configFolderPath);
 
             return (systemConfig, resourcesConfig);
         }
 
         static void Main(string[] args)
         {
-            Options parsedArgs;
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             parseResult.WithParsed(RunOptions);
             parseResult.WithNotParsed(errs => HandleParseError(parseResult, errs));

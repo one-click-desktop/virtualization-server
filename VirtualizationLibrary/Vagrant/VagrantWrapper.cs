@@ -128,9 +128,10 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             {
                 VagrantDestroy(parameters);
             }
-            catch (VagrantException)
+            catch (VagrantException e)
             {
                 //Ignorujemy wyjatki z destroya - best effort
+                logger.Warn(e, "Best effort vagrant destroy - ignoring error.");
             }
         }
     }

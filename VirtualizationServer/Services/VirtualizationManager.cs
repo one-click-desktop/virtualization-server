@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
-using OneClickDesktop.BackendClasses.Model.States;
 using OneClickDesktop.VirtualizationLibrary.Libvirt;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
 using OneClickDesktop.VirtualizationServer.Configuration;
@@ -15,9 +13,10 @@ namespace OneClickDesktop.VirtualizationServer.Services
     /// <summary>
     /// Klasa zarządza maszynami wirtualnymi działającymi pod pieczą systemu.
     /// </summary>
-    public class VirtualizationManager: IDisposable
+    public class VirtualizationManager : IDisposable
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+        private object vagrantLock = new object();
 
         private VirtSrvConfiguration conf;
         private LibvirtWrapper libvirt;
@@ -44,7 +43,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
         /// true - operation succeeded
         /// false - operation failed
         /// </returns>
-        public bool DomainStartup(string domainName, TemplateResources resource, out IPAddress address)
+        public bool DomainStartup(string domainName, TemplateResources resource, GpuId attachedGPU,
+            out IPAddress address)
         {
             address = null;
             if (libvirt.DoesDomainActive(domainName))
@@ -59,21 +59,35 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     domainName,
                     conf.BridgeInterfaceName,
                     resource.Memory,
-                    resource.CpuCores
+                    resource.CpuCores,
+                    conf.PostStartupPlaybook,
+                    conf.LibvirtUri
                 );
-                vagrant.VagrantUp(parameters);
+
+                if (attachedGPU != null && attachedGPU.PciIdentifiers.Count > 0)
+                    parameters.AddParameter(new GpuParameter(attachedGPU));
+
+                lock (vagrantLock)
+                {
+                    vagrant.VagrantUp(parameters);
+                }
+
+                logger.Info("Vagrant up command finished");
 
                 IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
-                var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
-
-                if (addresses == null || addresses.FirstOrDefault(ip => bridgedNetwork.Contains(ip)) == null)
+                address = TryGetDomainAddress(domainName, bridgedNetwork, 20);
+                if (address == null)
                 {
-                    logger.Warn($"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
-                    vagrant.BestEffortVagrantDestroy(parameters);
+                    lock (vagrantLock)
+                    {
+                        logger.Warn(
+                            $"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
+                        vagrant.BestEffortVagrantDestroy(parameters);
+                    }
+
                     return false;
                 }
-                
-                address = addresses.FirstOrDefault(ip => bridgedNetwork.Contains(ip));
+
                 return true;
             }
             catch (VagrantException e)
@@ -81,6 +95,24 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 logger.Error(e, "Vagrant up returned with error");
                 return false;
             }
+        }
+
+        private IPAddress TryGetDomainAddress(string domainName, IPNetwork bridgedNetwork, int askCount = 10,
+            int askIntervalMs = 500)
+        {
+            IPAddress result = null;
+            int askCounter = 0;
+
+            while (result == null && askCounter < askCount)
+            {
+                var addresses = libvirt.GetDomainsNetworkAddresses(domainName);
+                if (addresses?.Any() ?? false)
+                    result = addresses?.FirstOrDefault(bridgedNetwork.Contains);
+                Thread.Sleep(askIntervalMs);
+                askCounter++;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -98,7 +130,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             if (!libvirt.DoesDomainExist(domainName))
                 return false;
-            
+
             try
             {
                 VagrantParameters parameters = new VagrantParameters
@@ -108,7 +140,11 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     domainName,
                     conf.BridgeInterfaceName
                 );
-                vagrant.VagrantDestroy(parameters);
+                lock (vagrantLock)
+                {
+                    vagrant.VagrantDestroy(parameters);
+                }
+
                 return true;
             }
             catch (VagrantException e)

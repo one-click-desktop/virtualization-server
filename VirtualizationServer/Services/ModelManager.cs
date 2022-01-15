@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text.Json;
 using NLog;
 using OneClickDesktop.BackendClasses.Model;
 using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.BackendClasses.Model.States;
+using OneClickDesktop.BackendClasses.Model.Types;
 using OneClickDesktop.VirtualizationServer.Messages;
 
 namespace OneClickDesktop.VirtualizationServer.Services
@@ -69,7 +69,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
         public TemplateResources GetTemplateResources(MachineType type)
         {
-            if (!model.TemplateResources.TryGetValue(type.Type, out TemplateResources res))
+            if (!model.TemplateResources.TryGetValue(type.TechnicalName, out TemplateResources res))
                 return null;
             return res;
         }
@@ -93,6 +93,18 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             var res = model.FreeResources - template;
             return !(res.Memory < 0 || res.CpuCores < 0 || res.Storage < 0 || (template.AttachGpu && model.FreeResources.GpuCount < 1));
+        }
+
+        public bool HasRunningSessions()
+        {
+            return model.Sessions.Values.Any(session => session.SessionState == SessionState.Running);
+        }
+
+        public GpuId GetFreeGPU()
+        {
+            if (model.FreeResources.GpuCount > 0)
+                return model.FreeResources.GpuIds.First();
+            return null;
         }
     }
 }

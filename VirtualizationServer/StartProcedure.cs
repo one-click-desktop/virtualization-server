@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
-using NLog;
 using OneClickDesktop.BackendClasses.Communication;
-using OneClickDesktop.BackendClasses.Model.Resources;
 using OneClickDesktop.VirtualizationServer.Configuration;
 using OneClickDesktop.VirtualizationServer.Services;
 using OneClickDesktop.RabbitModule.Common.Exceptions;
 using OneClickDesktop.RabbitModule.VirtualizationServer;
-using OneClickDesktop.VirtualizationServer.Configuration;
 
 namespace OneClickDesktop.VirtualizationServer
 {

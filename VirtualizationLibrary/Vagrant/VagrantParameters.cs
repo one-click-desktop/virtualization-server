@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using OneClickDesktop.BackendClasses.Model.Resources;
 
 namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 {
@@ -112,6 +113,44 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         public BridgeParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
         { }
     }
+    
+    public class GpuParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "GPU";
+        public const string CLI_SUFFIX = "gpu";
+
+        public GpuParameter(GpuId gpuAddresses) : base("", ENV_SUFFIX, CLI_SUFFIX)
+        {
+            StringBuilder val = new StringBuilder();
+
+            val.Append(gpuAddresses.PciIdentifiers.First());
+            foreach (PciAddressId addr in gpuAddresses.PciIdentifiers.Skip(1))
+            {
+                val.Append(",");
+                val.Append(addr);
+            }
+
+            value = val.ToString(); 
+        }
+    }
+    
+    public class LibvirtUriParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "LIBVIRT_URI";
+        public const string CLI_SUFFIX = "libvirt-uri";
+
+        public LibvirtUriParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+    
+    public class PoststartupPlaybookParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "POSTSTARTUP_PLAYBOOK";
+        public const string CLI_SUFFIX = "poststartup-playbook";
+
+        public PoststartupPlaybookParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
 
     /// <summary>
     /// Klasa opisująca zbiór parametrów dla Vagrantfile
@@ -132,7 +171,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         /// <param name="name"></param>
         /// <param name="hostname"></param>
         /// <param name="bridgeDevice"></param>
-        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice)
+        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, string libvirtUri = "qemu:///system")
         {
             parameters = new List<AbstractParameter>()
             {
@@ -141,7 +180,9 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                 new HostnameParameter(hostname),
                 new CpusParameter(0),
                 new MemoryParameter(0),
-                new BridgeParameter(bridgeDevice)
+                new BridgeParameter(bridgeDevice),
+                new LibvirtUriParameter(libvirtUri),
+                new PoststartupPlaybookParameter("")
             };   
         }
         
@@ -154,7 +195,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         /// <param name="bridgeDevice"></param>
         /// <param name="memory"></param>
         /// <param name="cpus"></param>
-        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, int memory, int cpus)
+        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, int memory, int cpus, string poststartupPlaybook, string libvirtUri = "qemu:///system")
         {
             parameters = new List<AbstractParameter>()
             {
@@ -163,7 +204,9 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                 new HostnameParameter(hostname),
                 new CpusParameter(cpus),
                 new MemoryParameter(memory),
-                new BridgeParameter(bridgeDevice)
+                new BridgeParameter(bridgeDevice),
+                new LibvirtUriParameter(libvirtUri),
+                new PoststartupPlaybookParameter(poststartupPlaybook)
             };   
         }
     

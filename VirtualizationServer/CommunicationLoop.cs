@@ -52,6 +52,12 @@ namespace OneClickDesktop.VirtualizationServer
             receiveCommandTimer.Enabled = true;
             receiveCommandTimer.Elapsed += (obj, args) =>
             {
+                if (services.ModelManager.HasRunningSessions())
+                {
+                    logger.Info("Timeout on message from overseers - ignore since server has running sessions");
+                    return;
+                }
+
                 logger.Info("Timeout on message from overseers - stopping server.");
                 exitSemaphore.Release();
             };
@@ -61,34 +67,41 @@ namespace OneClickDesktop.VirtualizationServer
             runningServices.ClientHeartbeat.Found += HandleFound;
         }
 
-        private static Action AsyncDomainStartup(DomainStartupRDTO request)
+        private static Action AsyncDomainStartup(DomainStartupRDTO request, GpuId attachedGPU = null)
         {
-            bool success = runningServices.VirtualizationManager
-                .DomainStartup(request.DomainName,
-                    runningServices.ModelManager.GetTemplateResources(request.DomainType), out IPAddress address);
-
-            lock (modelLock)
+            try
             {
-                if (!success)
+                bool success = runningServices.VirtualizationManager
+                    .DomainStartup(request.DomainName,
+                        runningServices.ModelManager.GetTemplateResources(request.DomainType), attachedGPU, out IPAddress address);
+                logger.Info("Waiting domain async startup for model lock");
+                lock (modelLock)
                 {
-                    logger.Warn($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
+                    logger.Info("Domain async startup model lock aquired");
+                    if (!success)
+                    {
+                        logger.Warn($"Startup of machine {request.DomainName}, type {request.DomainType}, failed");
 
-                    //Usunięcie wystartowanej maszyny z błedem
-                    runningServices.ModelManager.DeleteMachine(request.DomainName);
-                    logger.Info($"Domain {request.DomainName} startup failed.");
-                }
-                else
-                {
-                    //Zmiana stanu prawidłowo wystartowanej maszyny
-                    Machine m = runningServices.ModelManager.GetMachine(request.DomainName);
-                    m.State = MachineState.Free;
-                    m.AssignAddress(new MachineAddress(address.MapToIPv4().ToString()));
-                    logger.Info($"Domain {request.DomainName} startup succeded.");
-                }
+                        //Usunięcie wystartowanej maszyny z błedem
+                        runningServices.ModelManager.DeleteMachine(request.DomainName);
+                        logger.Info($"Domain {request.DomainName} startup failed.");
+                    }
+                    else
+                    {
+                        //Zmiana stanu prawidłowo wystartowanej maszyny
+                        Machine m = runningServices.ModelManager.GetMachine(request.DomainName);
+                        m.State = MachineState.Free;
+                        m.AssignAddress(new MachineAddress(address.MapToIPv4().ToString()));
+                        logger.Info($"Domain {request.DomainName} startup succeded.");
+                    }
 
-                runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+                    runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
+                }
             }
-
+            catch (Exception e)
+            {
+                logger.Error(e, $"DomainAsyncStartup domain {request.DomainName} unhandled exception.");
+            }
             return null;
         }
 
@@ -119,7 +132,7 @@ namespace OneClickDesktop.VirtualizationServer
                         $"Machine of type {request.DomainType} is not registered at this server. Skipping request");
                     return;
                 }
-                
+
                 if (!runningServices.ModelManager.CanServerRunMachine(resources))
                 {
                     logger.Warn(
@@ -128,7 +141,15 @@ namespace OneClickDesktop.VirtualizationServer
                 }
 
                 runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
-                Task.Run(() => AsyncDomainStartup(request));
+                if (resources.AttachGpu)
+                {
+                    GpuId gpuToAttach = runningServices.ModelManager.GetFreeGPU();
+                    Task.Run(() => AsyncDomainStartup(request, gpuToAttach));
+                }
+                else
+                {
+                    Task.Run(() => AsyncDomainStartup(request));
+                }
 
                 runningServices.OverseersCommunication.ReportModel(runningServices.ModelManager.GetReport());
             }
@@ -208,7 +229,7 @@ namespace OneClickDesktop.VirtualizationServer
                     return;
                 }
 
-                if (machine.MachineType.Type != request.PartialSession.SessionType.Type)
+                if (machine.MachineType.TechnicalName != request.PartialSession.SessionType.Type)
                 {
                     logger.Info(
                         $"Requesting machine {request.DomainName} for session type {request.PartialSession.SessionType.Type} but it cannot handle it, machine type is {machine.MachineType}");

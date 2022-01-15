@@ -6,6 +6,10 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
     public class ResourcesTemplateConfiguration
     {
         /// <summary>
+        /// Human readable machine type name. If not set template name will be used.
+        /// </summary>
+        public string HumanReadableName { get; set; } = null;
+        /// <summary>
         /// Number of logical cores required to run machine
         /// </summary>
         public int Cpus { get; set; } = 2;
@@ -16,12 +20,12 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// <summary>
         /// Amount of Storage required to run machine (in GiB)
         /// </summary>
-        public int Storage { get; set; }
+        public int Storage { get; set; } = 20;
 
         /// <summary>
         /// Wished model of GPU. Implisies that machine should has attached GPU on startup.
         /// </summary>
-        public string WishedGPU { get; set; } = null;
+        public bool AttachGPU { get; set; } = false;
 
     }
 }
