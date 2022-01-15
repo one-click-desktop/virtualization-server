@@ -10,6 +10,7 @@ Table of content:
   - [Dependencies](#dependencies)
   - [Building](#building)
   - [Creating Vagrant Box compatible with OneClickDesktop](#creating-vagrant-box-compatible-with-oneclickdesktop)
+  - [Virtual machine ansible provisioning](#virtual-machine-ansible-provisioning)
   - [Passing PCI devices to system](#passing-pci-devices-to-system)
   - [Configuration](#configuration)
     - [OneClickDesktop](#oneclickdesktop)
@@ -47,7 +48,7 @@ To run virtualization Server some Vagrant Box name should be passed.
 With system is supplied arch based libvirt box [smogork/archlinux-rdp](https://app.vagrantup.com/smogork/boxes/archlinux-rdp).
 It can be used as a template machine to make custom modifications.
 
-If you want to create custom box from scratch please read [basic requirements](https://www.vagrantup.com/docs/boxes/base) from hashicorp.
+If you want to create custom box from scratch please read [basic requirements](https://www.vagrantup.com/docs/boxes/base) from HashiCorp.
 In addition OneClickDesktop requires from box to:
 1. Have some desktop manager (XFCE is used in template box).
 2. Have RDP server ([xrdp](http://xrdp.org/) is used in template box)
@@ -55,6 +56,16 @@ In addition OneClickDesktop requires from box to:
 4. Run `qemu-guest-agent` on virtual machine startup.
 
 To build vagrant box for libvirt provider please read `vagrant-libvirt` box creation [documentation](https://github.com/vagrant-libvirt/vagrant-libvirt#create-box).
+
+## Virtual machine ansible provisioning
+
+> Ansible provision can significantly extend the virtual machine startup duration. Treat it as hotfix or changing configuration method.
+
+After virtual machine startup it can be provisioned by ansible playbook.
+Path to playbook can be passed in configuration file. By default it runs file from `res/poststartup_playbook.yml` path. It is crucial to test playbook before using inside system.
+Any error during playbook run will result ind domain startup failure.
+
+We advise to configure machine as much as it is possible before packing it into vagrant box. Ansible provisioner can significantly extend the virtual machine startup duration.
 
 ## Passing PCI devices to system
 
