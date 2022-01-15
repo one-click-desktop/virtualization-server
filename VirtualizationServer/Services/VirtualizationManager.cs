@@ -59,7 +59,9 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     domainName,
                     conf.BridgeInterfaceName,
                     resource.Memory,
-                    resource.CpuCores
+                    resource.CpuCores,
+                    conf.PostStartupPlaybook,
+                    conf.LibvirtUri
                 );
 
                 if (attachedGPU != null && attachedGPU.PciIdentifiers.Count > 0)

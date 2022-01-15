@@ -8,6 +8,9 @@
 
     <ItemGroup>
       <None Remove="Vagrantfile" />
+      <None Update="res\poststartup_playbook.yml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
