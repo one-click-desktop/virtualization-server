@@ -2,7 +2,7 @@
 
 # Dobry do testów jest obraz d3atiq/ubuntu-18.04-rdp-base
 # Przykładowe wywołanie:
-# vagrant --bridge="br0" --boxname="generic/alpine38" --vm-name="alpine-test" --cpus="2" --memory="512" --hostname="alpine-test" --gpu="0000:03:00.0,0000:03:00.1" up
+# vagrant --bridge="br0" --boxname="smogork/archlinux-rdp" --vm-name="archrdp-test" --cpus="2" --memory="1024" --hostname="archrdp-test" --gpu="0000:03:00.0,0000:03:00.1" --poststartup-playbook="poststartup_playbook.yml" up
 
 # Jest kilka uwag do obraxzu vagrantowego:
 # 1. Potrzebny jest qemu-ga na guescie
@@ -12,7 +12,7 @@
 require 'getoptlong'
 
 # "args": ["--bridge=\"br0\"", "--boxname=\"generic/alpine38\"", "--vm-name=\"alpine-test\"","--cpus=\"2\"",
-# "--memory=\"512\"", "--hostname=\"alpine-test\"", "--gpu=\"0000:03:00.0,0000:03:00.1\""],
+# "--memory=\"512\"", "--hostname=\"alpine-test\"", "--gpu=\"0000:03:00.0,0000:03:00.1\"", "--poststartup-playbook=\"poststartup_playbook.yml\""],
 
 class PCIAddress
 
@@ -85,13 +85,15 @@ class Configuration
     
     def initialize
        @opts = GetoptLong.new(
-         [ '--boxname',         GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--vm-name',         GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--cpus',            GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--memory',          GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--hostname',        GetoptLong::OPTIONAL_ARGUMENT ],
-         [ '--bridge',          GetoptLong::REQUIRED_ARGUMENT ],
-         [ '--gpu',             GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--boxname',               GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--vm-name',               GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--cpus',                  GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--memory',                GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--hostname',              GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--bridge',                GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--gpu',                   GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--libvirt-uri',           GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--poststartup-playbook',  GetoptLong::OPTIONAL_ARGUMENT ],
        )
        set_default_values
     end
@@ -105,6 +107,8 @@ class Configuration
         puts "bridge: #{@bridge}"
         puts "hostname: #{@hostname}"
         puts "gpu: #{@gpu.to_s}"
+        puts "libvirt-uri: #{@libvirt_uri}"
+        puts "poststartup_playbook: #{@poststartup_playbook}"
     end
     
     def parse_configuration
@@ -140,33 +144,51 @@ class Configuration
         @gpu.addresses
     end
 
+    def libvirt_uri
+        @libvirt_uri
+    end
+
+    def poststartup_playbook
+        @poststartup_playbook
+    end
+
     def gpu_attached
-      return @gpu.address_count > 0
+        return @gpu.address_count > 0
     end
     
     private
     
     def set_default_values
-        @boxname        = 'pass_box_name_error' + (0...8).map { (65 + rand(26)).chr }.join
-        @vm_name        = 'default'
-        @cpus           = 1
-        @memory         = 512
-        @hostname       = @vm_name
-        @bridge         = 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
-        @gpu            = GPUGroup.new('')
+        @boxname              = 'pass_box_name_error' + (0...8).map { (65 + rand(26)).chr }.join
+        @vm_name              = 'default'
+        @cpus                 = 1
+        @memory               = 512
+        @hostname             = @vm_name
+        @bridge               = 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
+        @gpu                  = GPUGroup.new('')
+        @libvirt_uri          = "qemu:///system"
+        @poststartup_playbook = "res/poststartup_playbook.yml"
+    end
+
+    def read_env_variable(current_value, variable_name)
+      if ENV[variable_name]
+        return ENV[variable_name]
+      end
+      return current_value
     end
    
     def parse_environment
-        @boxname        = ENV[@@ENV_PREFIX+'BOXNAME']
-        @vm_name        = ENV[@@ENV_PREFIX+'VMNAME'] 
-        @cpus           = ENV[@@ENV_PREFIX+'CPUS'] 
-        @memory         = ENV[@@ENV_PREFIX+'MEMORY'] 
-        @hostname       = ENV[@@ENV_PREFIX+'HOSTNAME']
-        @bridge         = ENV[@@ENV_PREFIX+'BRIDGE'] 
+        @boxname              = read_env_variable(@boxname, @@ENV_PREFIX+'BOXNAME')
+        @vm_name              = read_env_variable(@vm_name, @@ENV_PREFIX+'VMNAME')
+        @cpus                 = read_env_variable(@cpus, @@ENV_PREFIX+'CPUS')
+        @memory               = read_env_variable(@memory, @@ENV_PREFIX+'MEMORY') 
+        @hostname             = read_env_variable(@hostname, @@ENV_PREFIX+'HOSTNAME')
+        @bridge               = read_env_variable(@bridge, @@ENV_PREFIX+'BRIDGE') 
         if ENV[@@ENV_PREFIX+'GPU']
-          @gpu          = GPUGroup.new(ENV[@@ENV_PREFIX+'GPU']) 
+          @gpu                = GPUGroup.new(ENV[@@ENV_PREFIX+'GPU']) 
         end
-        
+        @libvirt_uri          = read_env_variable(@libvirt_uri, @@ENV_PREFIX+'LIBVIRT_URI')
+        @poststartup_playbook = read_env_variable(@poststartup_playbook, @@ENV_PREFIX+'POSTSTARTUP_PLAYBOOK')
     end
    
     def parse_arguments
@@ -187,6 +209,10 @@ class Configuration
                 @bridge = arg
               when '--gpu'
                 @gpu = GPUGroup.new(arg)
+              when '--libvirt-uri'
+                @libvirt_uri = arg
+              when '--poststartup-playbook'
+                @poststartup_playbook = arg
             end
           end
           rescue
@@ -225,10 +251,14 @@ Vagrant.configure(2) do |config|
     libvirt.host = "example.com"
     libvirt.memory = conf.memory
     libvirt.cpus = conf.cpus
-    libvirt.uri = "qemu:///system" # deprecha - serwery wirtualizacji wcale nie sa potrzebne
+    libvirt.uri = conf.libvirt_uri
     libvirt.kvm_hidden = true
     conf.gpu.each do |addr|
       libvirt.pci :domain => addr.domain, :bus => addr.bus, :slot => addr.slot, :function => addr.function 
     end
+  end
+  
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = conf.poststartup_playbook
   end
 end
