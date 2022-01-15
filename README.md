@@ -25,6 +25,19 @@ dotnet build VirtualizationServer.sln
 ```
 But forked IDNT library should build for older frameworks and can be problematic to build.
 
+## Passing PCI devices to system
+
+OneClickDesktop system can pass single physical GPU to created virtual machine.
+It is realized by [PCI passthrough](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/virtualization/chap-virtualization-pci_passthrough) mechanism.
+This mechanism is really hardware dependent and rely on [IOMMU technology](https://www.amd.com/system/files/TechDocs/48882_IOMMU.pdf).
+On ArchWiki is great tutorial of [PCI passthrough via OVMF](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF) and some troubleshooting advises.
+
+Virtualization Server expects PCI addresses of GPUs in isolated IOMMU group.
+Those GPUs must have stub drivers loaded to properly initialize on virtual machine startup. 
+Then on startup machine has GPU attached by addresses passed in configuration file.
+
+System can be run without GPUs passed. Just configure Virtualization Server to have 0 GPUs attached.
+
 ## Configuration
 
 Configuration is stored in `VirtualizationServer/config`.
@@ -33,7 +46,7 @@ Configuration is stored in `VirtualizationServer/config`.
 
 Unspecified settings use default values. Configuration files contain default value entries commented out, with default value assigned.
 
-Configuration used is specified on start with flag `-c`.
+Configuration used is specified on start with flag `-c`. By default configuration is taken from `./config/` directory.
 
 ### OneClickDesktop
 
@@ -65,6 +78,22 @@ Configuration used is specified on start with flag `-c`.
 
 - `AddressCount`: Number of addresses associated with this GPU.
 - `Address_{index}`: PCI address in format `{domain:4}:{bus:2}:{slot:2}.{function:1}`. Number of instances of this setting must match value of `AddressCount` and start from `1`.
+
+For eg.
+```
+[ServerResources]
+Cpus=6
+Memory=4096
+Storage=200
+GPUsCount = 1
+#Names for machine types
+MachineTypes=cpu,gpu
+
+[ServerGPU.1]
+AddressCount = 2
+Address_1 = 0000:03:00.0
+Address_2 = 0000:03:00.1
+```
 
 ### Template
 
