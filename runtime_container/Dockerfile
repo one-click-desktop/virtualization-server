@@ -9,4 +9,4 @@ RUN pip3 install --upgrade pip && \
 RUN curl https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb -o vagrant_2.2.19_x86_64.deb && dpkg -i vagrant_2.2.19_x86_64.deb
 RUN vagrant plugin install vagrant-libvirt
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT []
