@@ -1,7 +1,90 @@
 ---
 - hosts: all
   tasks:
-    - name: Create file to proof poststratup playbook working
+    - name: Modify /etc/openldap/ldap.conf
+      become: true
+      block:
+        - name: Append uri
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/openldap/ldap.conf
+            line: "URI ldap://192.168.100.160"#parametr
+
+        - name: Append base
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/openldap/ldap.conf
+            line: "BASE dc=example,dc=org"#parametr
+
+    - name: Modify /etc/nslcd.conf
+      become: true
+      block:
+        - name: Append uri
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "uri ldap://192.168.100.160"#parametr
+
+        - name: Append base
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base dc=example,dc=org"#parametr
+
+        - name: Append binddn
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "binddn cn=readonly,dc=example,dc=org"#parametr
+
+        - name: Append bindpw
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "bindpw readonly"#parametr
+
+        - name: Append rootpwmoddn
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "rootpwmoddn cn=admin,dc=example,dc=org"#parametr
+
+        - name: Append base group
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base group ou=groups,dc=example,dc=org"#parametr
+
+        - name: Append base passwd
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base passwd ou=users,dc=example,dc=org"#parametr
+
+        - name: Append base shadow
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base shadow ou=users,dc=example,dc=org"#parametr
+
+    - name: Restart nslcd service
+      become: true
+      ansible.builtin.systemd:
+        state: restarted
+        name: nslcd.service
+
+    - name: Create common home2 directory
+      become: true
       ansible.builtin.file:
-        path: /home/vagrant/Desktop/poststartup_file
-        state: 'touch'
+        path: /home2 
+        state: directory
+        mode: '0755'
+
+    - name: Mount home folders
+      become: true
+      ansible.posix.mount:
+        path: /home2
+        src: 192.168.100.160:/ #parametr
+        opts: rw,sync,hard,intr
+        state: mounted
+        fstype: nfs
