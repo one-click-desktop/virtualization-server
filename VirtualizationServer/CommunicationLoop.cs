@@ -73,7 +73,8 @@ namespace OneClickDesktop.VirtualizationServer
             {
                 bool success = runningServices.VirtualizationManager
                     .DomainStartup(request.DomainName,
-                        runningServices.ModelManager.GetTemplateResources(request.DomainType), attachedGPU, out IPAddress address);
+                        runningServices.ModelManager.GetTemplateResources(request.DomainType), attachedGPU,
+                        out IPAddress address);
                 logger.Info("Waiting domain async startup for model lock");
                 lock (modelLock)
                 {
@@ -102,6 +103,7 @@ namespace OneClickDesktop.VirtualizationServer
             {
                 logger.Error(e, $"DomainAsyncStartup domain {request.DomainName} unhandled exception.");
             }
+
             return null;
         }
 
@@ -139,15 +141,17 @@ namespace OneClickDesktop.VirtualizationServer
                         $"There is not enough resources to run machine of type {request.DomainType}. Skipping request");
                     return;
                 }
-
-                runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
+                
                 if (resources.AttachGpu)
                 {
                     GpuId gpuToAttach = runningServices.ModelManager.GetFreeGPU();
+                    runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType,
+                        gpuToAttach);
                     Task.Run(() => AsyncDomainStartup(request, gpuToAttach));
                 }
                 else
                 {
+                    runningServices.ModelManager.CreateBootingMachine(request.DomainName, request.DomainType);
                     Task.Run(() => AsyncDomainStartup(request));
                 }
 

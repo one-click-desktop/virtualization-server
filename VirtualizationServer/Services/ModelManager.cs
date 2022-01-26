@@ -54,15 +54,16 @@ namespace OneClickDesktop.VirtualizationServer.Services
         {
             model.DeleteMachine(machineName);
         }
-        
+
         /// <summary>
         /// Create machine in booting state. Every modification to machine is made by reference.
         /// </summary>
         /// <param name="domainName"></param>
         /// <param name="type"></param>
-        public void CreateBootingMachine(string domainName, MachineType type)
+        /// <param name="attachedGpu"></param>
+        public void CreateBootingMachine(string domainName, MachineType type, GpuId attachedGpu = null)
         {
-            Machine m = model.CreateMachine(domainName, type);
+            Machine m = model.CreateMachine(domainName, type, attachedGpu);
 
             m.State = MachineState.Booting;
         }
