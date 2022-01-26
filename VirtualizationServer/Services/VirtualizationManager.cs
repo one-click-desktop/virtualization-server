@@ -46,6 +46,20 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 nvramPath
             );
         }
+
+        public static VagrantParameters VagrantForShutdown(string domainName,
+            string nvramPath, VirtSrvConfiguration conf)
+        {
+            return new VagrantParameters
+            (
+                conf.VagrantboxUri,
+                domainName,
+                domainName,
+                conf.BridgeInterfaceName,
+                conf.LibvirtUri,
+                nvramPath
+            );
+        }
     }
     
     /// <summary>
@@ -53,6 +67,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
     /// </summary>
     public class VirtualizationManager : IDisposable
     {
+        private const string nvramPrefix = "/var/lib/libvirt/qemu/nvram";
+        
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private object vagrantLock = new object();
 
@@ -91,7 +107,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             address = null;
             if (libvirt.DoesDomainActive(domainName))
                 return false;
-            string nvramPath = Path.Combine("/var/lib/libvirt/qemu/nvram", domainName + ".fd");
+            string nvramPath = Path.Combine(nvramPrefix, domainName + ".fd");
 
             try
             {
@@ -167,19 +183,14 @@ namespace OneClickDesktop.VirtualizationServer.Services
             if (!libvirt.DoesDomainExist(domainName))
                 return false;
 
+            string nvramPath = Path.Combine(nvramPrefix, domainName + ".fd");
             try
             {
-                VagrantParameters parameters = new VagrantParameters
-                (
-                    virtsrvConf.VagrantboxUri,
-                    domainName,
-                    domainName,
-                    virtsrvConf.BridgeInterfaceName
-                );
+                VagrantParameters vParams = ParametersFactory.VagrantForShutdown(domainName, nvramPath, virtsrvConf);
                 lock (vagrantLock)
                 {
-                    vagrant.VagrantDestroy(parameters);
-                    File.Delete(Path.Combine("/var/lib/libvirt/qemu/nvram", domainName + ".fd"));
+                    vagrant.VagrantDestroy(vParams);
+                    File.Delete(nvramPath);
                 }
 
                 return true;

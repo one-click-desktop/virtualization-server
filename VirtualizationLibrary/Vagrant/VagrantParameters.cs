@@ -189,7 +189,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         /// <param name="name"></param>
         /// <param name="hostname"></param>
         /// <param name="bridgeDevice"></param>
-        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, string libvirtUri = "qemu:///system")
+        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, string libvirtUri, string nvramPath)
         {
             parameters = new List<AbstractParameter>()
             {
@@ -200,7 +200,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                 new MemoryParameter(0),
                 new BridgeParameter(bridgeDevice),
                 new LibvirtUriParameter(libvirtUri),
-                new PoststartupPlaybookParameter("")
+                new PoststartupPlaybookParameter(""),
+                new NvramParameter(nvramPath)
             };   
         }
         
