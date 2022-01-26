@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
             );
         }
 
-        public static VagrantParameters VagrantForMachine(string domainName, TemplateResources resource, VirtSrvConfiguration conf)
+        public static VagrantParameters VagrantForMachine(string domainName, TemplateResources resource, string nvramPath, VirtSrvConfiguration conf)
         {
             return new VagrantParameters
             (
@@ -42,7 +43,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 conf.PostStartupPlaybook,
                 conf.LibvirtUri,
                 conf.UefiPath,
-                conf.NvramPath
+                nvramPath
             );
         }
     }
@@ -90,16 +91,19 @@ namespace OneClickDesktop.VirtualizationServer.Services
             address = null;
             if (libvirt.DoesDomainActive(domainName))
                 return false;
+            string nvramPath = Path.Combine("/var/lib/libvirt/qemu/nvram", domainName + ".fd");
 
             try
             {
                 AnsibleParameters aParams = ParametersFactory.AnsibleFromConfiguration(nfsConf, ldapConf);
-                VagrantParameters vParams = ParametersFactory.VagrantForMachine(domainName, resource, virtsrvConf);
+                VagrantParameters vParams = ParametersFactory.VagrantForMachine(domainName, resource, nvramPath, virtsrvConf);
                 if (attachedGPU != null && attachedGPU.PciIdentifiers.Count > 0)
                     vParams.AddParameter(new GpuParameter(attachedGPU));
 
                 lock (vagrantLock)
                 {
+                    if (virtsrvConf.NvramPath?.Length > 0 && virtsrvConf.NvramPath?.Length > 0)
+                        File.Copy(virtsrvConf.NvramPath, nvramPath, true);
                     vagrant.VagrantUp(vParams, aParams);
                 }
 
@@ -114,6 +118,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                         logger.Warn(
                             $"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
                         vagrant.BestEffortVagrantDestroy(vParams);
+                        File.Delete(nvramPath);
                     }
 
                     return false;
@@ -174,6 +179,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 lock (vagrantLock)
                 {
                     vagrant.VagrantDestroy(parameters);
+                    File.Delete(Path.Combine("/var/lib/libvirt/qemu/nvram", domainName + ".fd"));
                 }
 
                 return true;
