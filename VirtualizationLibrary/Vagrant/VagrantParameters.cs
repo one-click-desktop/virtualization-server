@@ -189,7 +189,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         /// <param name="name"></param>
         /// <param name="hostname"></param>
         /// <param name="bridgeDevice"></param>
-        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, string libvirtUri, string nvramPath)
+        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, string libvirtUri, string uefiPath, string nvramPath)
         {
             parameters = new List<AbstractParameter>()
             {
@@ -201,7 +201,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                 new BridgeParameter(bridgeDevice),
                 new LibvirtUriParameter(libvirtUri),
                 new PoststartupPlaybookParameter(""),
-                new NvramParameter(nvramPath)
+                new NvramParameter(nvramPath),
+                new UefiParameter(uefiPath)
             };   
         }
         

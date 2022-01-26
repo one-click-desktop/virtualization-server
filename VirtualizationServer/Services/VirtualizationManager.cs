@@ -57,7 +57,8 @@ namespace OneClickDesktop.VirtualizationServer.Services
                 domainName,
                 conf.BridgeInterfaceName,
                 conf.LibvirtUri,
-                nvramPath
+                nvramPath,
+                conf.UefiPath
             );
         }
     }
