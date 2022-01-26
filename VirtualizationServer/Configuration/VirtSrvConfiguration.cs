@@ -33,8 +33,8 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// </summary>
         public string UefiPath { get; set; } = null;
         /// <summary>
-        /// Path on host machine to NVRAM image used on box building.
-        /// It should be hardlinked before attaching to machine and unlink after destroying.
+        /// Path (inside container) to NVRAM image used on box building.
+        /// It will be copied to volume connected with host at /var/lib/libvirt/qemu/nvram/ to run machine.
         /// </summary>
         public string NvramPath { get; set; } = null;
         /// <summary>

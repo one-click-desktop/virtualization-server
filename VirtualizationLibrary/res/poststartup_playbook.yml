@@ -14,7 +14,7 @@
           ansible.builtin.lineinfile:
             state: present
             path: /etc/openldap/ldap.conf
-            line: "BASE {{ lookup('env','OCD_DOMAIN') }}"
+            line: "BASE {{ lookup('env','OCD_LDAP_DOMAIN') }}"
 
     - name: Modify /etc/nslcd.conf
       become: true
@@ -29,43 +29,43 @@
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base {{ lookup('env','OCD_DOMAIN') }}"
+            line: "base {{ lookup('env','OCD_LDAP_DOMAIN') }}"
 
         - name: Append binddn
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "binddn {{ lookup('env','OCD_RODN') }}"
+            line: "binddn {{ lookup('env','OCD_LDAP_RODN') }}"
 
         - name: Append bindpw
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "bindpw {{ lookup('env','OCD_ROPW') }}"
+            line: "bindpw {{ lookup('env','OCD_LDAP_ROPW') }}"
 
         - name: Append rootpwmoddn
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "rootpwmoddn {{ lookup('env','OCD_ADMDN') }}"
+            line: "rootpwmoddn {{ lookup('env','OCD_LDAP_ADMDN') }}"
 
         - name: Append base group
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base group {{ lookup('env','OCD_GRPDN') }}"
+            line: "base group {{ lookup('env','OCD_LDAP_GRPDN') }}"
 
         - name: Append base passwd
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base passwd {{ lookup('env','OCD_USRDN') }}"
+            line: "base passwd {{ lookup('env','OCD_LDAP_USRDN') }}"
 
         - name: Append base shadow
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base shadow {{ lookup('env','OCD_USRDN') }}"
+            line: "base shadow {{ lookup('env','OCD_LDAP_USRDN') }}"
 
     - name: Restart nslcd service
       become: true
