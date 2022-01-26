@@ -151,6 +151,24 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         public PoststartupPlaybookParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
         { }
     }
+    
+    public class UefiParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "UEFI";
+        public const string CLI_SUFFIX = "uefi";
+
+        public UefiParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
+    
+    public class NvramParameter : AbstractParameter
+    {
+        public const string ENV_SUFFIX = "NVRAM";
+        public const string CLI_SUFFIX = "nvram";
+
+        public NvramParameter(string value) : base(value, ENV_SUFFIX, CLI_SUFFIX)
+        { }
+    }
 
     /// <summary>
     /// Klasa opisująca zbiór parametrów dla Vagrantfile
@@ -195,7 +213,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         /// <param name="bridgeDevice"></param>
         /// <param name="memory"></param>
         /// <param name="cpus"></param>
-        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, int memory, int cpus, string poststartupPlaybook, string libvirtUri = "qemu:///system")
+        public VagrantParameters(string boxName, string name, string hostname, string bridgeDevice, int memory, int cpus, string poststartupPlaybook, string libvirtUri, string uefi, string nvram)
         {
             parameters = new List<AbstractParameter>()
             {
@@ -206,7 +224,9 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
                 new MemoryParameter(memory),
                 new BridgeParameter(bridgeDevice),
                 new LibvirtUriParameter(libvirtUri),
-                new PoststartupPlaybookParameter(poststartupPlaybook)
+                new PoststartupPlaybookParameter(poststartupPlaybook),
+                new UefiParameter(uefi),
+                new NvramParameter(nvram)
             };   
         }
     

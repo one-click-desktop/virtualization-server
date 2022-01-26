@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using OneClickDesktop.VirtualizationLibrary.Ansible;
 
 namespace OneClickDesktop.VirtualizationLibrary.Vagrant
 {
@@ -37,14 +38,15 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             
             return (proc.ExitCode, stderr);
         }
-        
+
         /// <summary>
         /// Przygotowuje parametry uruchomieniowe pod polecenia vagrant na Vagrantfile
         /// </summary>
         /// <param name="command">Polecenie do wykonania w bashu</param>
         /// <param name="parameters">Parametry przekazywane do Vagrntfile</param>
         /// <returns>Parametry uruchomieniowe procesu</returns>
-        private ProcessStartInfo PrepareForVagrantCommand(string command, VagrantParameters parameters)
+        private ProcessStartInfo PrepareForVagrantCommand(string command, VagrantParameters parameters,
+            AnsibleParameters ansibleParams = null)
         {
             ProcessStartInfo startInfo =
                 new ProcessStartInfo()
@@ -59,7 +61,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             startInfo.EnvironmentVariables["VAGRANT_VAGRANTFILE"] = vagrantfilePath;
             startInfo.EnvironmentVariables["VAGRANT_DEFAULT_PROVIDER"] = "libvirt";
             parameters.DefineEnvironmentalVariables(startInfo.EnvironmentVariables);
-
+            ansibleParams?.DefineEnvironmentalVariables(startInfo.EnvironmentVariables);
+            
             return startInfo;
         }
         
@@ -95,9 +98,9 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
         /// W wypadku niepowodzenia staramy sie wyczyscic co sie da przy pomocy metody VagrantDestroy.
         /// </summary>
         /// <param name="parameters">Parametry uruchamianej maszyny</param>
-        public void VagrantUp(VagrantParameters parameters)
+        public void VagrantUp(VagrantParameters vagrantParams, AnsibleParameters ansibleParams)
         {
-            (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant up", parameters));
+            (int code, string stderr) = RunCommand(PrepareForVagrantCommand("vagrant up", vagrantParams, ansibleParams));
             
             try
             {
@@ -105,7 +108,7 @@ namespace OneClickDesktop.VirtualizationLibrary.Vagrant
             }
             catch (VagrantException e)
             {
-                BestEffortVagrantDestroy(parameters);
+                BestEffortVagrantDestroy(vagrantParams);
                 throw;
             }
             

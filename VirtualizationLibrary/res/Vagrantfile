@@ -94,6 +94,8 @@ class Configuration
          [ '--gpu',                   GetoptLong::OPTIONAL_ARGUMENT ],
          [ '--libvirt-uri',           GetoptLong::OPTIONAL_ARGUMENT ],
          [ '--poststartup-playbook',  GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--uefi',                  GetoptLong::OPTIONAL_ARGUMENT ],
+         [ '--nvram',                 GetoptLong::OPTIONAL_ARGUMENT ],
        )
        set_default_values
     end
@@ -109,6 +111,8 @@ class Configuration
         puts "gpu: #{@gpu.to_s}"
         puts "libvirt-uri: #{@libvirt_uri}"
         puts "poststartup_playbook: #{@poststartup_playbook}"
+        puts "uefi: #{@uefi}"
+        puts "nvram: #{@nvram}"
     end
     
     def parse_configuration
@@ -152,6 +156,14 @@ class Configuration
         @poststartup_playbook
     end
 
+    def uefi
+      @uefi
+    end
+
+    def nvram
+      @nvram
+    end
+
     def gpu_attached
         return @gpu.address_count > 0
     end
@@ -167,7 +179,9 @@ class Configuration
         @bridge               = 'pass_bridge_device_name_error' + (0...8).map { (65 + rand(26)).chr }.join
         @gpu                  = GPUGroup.new('')
         @libvirt_uri          = "qemu:///system"
-        @poststartup_playbook = "res/poststartup_playbook.yml"
+        @poststartup_playbook = nil
+        @uefi                 = nil
+        @nvram                = nil
     end
 
     def read_env_variable(current_value, variable_name)
@@ -189,6 +203,8 @@ class Configuration
         end
         @libvirt_uri          = read_env_variable(@libvirt_uri, @@ENV_PREFIX+'LIBVIRT_URI')
         @poststartup_playbook = read_env_variable(@poststartup_playbook, @@ENV_PREFIX+'POSTSTARTUP_PLAYBOOK')
+        @uefi                 = read_env_variable(@poststartup_playbook, @@ENV_PREFIX+'UEFI')
+        @nvram                = read_env_variable(@poststartup_playbook, @@ENV_PREFIX+'NVRAM')
     end
    
     def parse_arguments
@@ -213,6 +229,10 @@ class Configuration
                 @libvirt_uri = arg
               when '--poststartup-playbook'
                 @poststartup_playbook = arg
+              when '--uefi'
+                @uefi = arg
+              when '--nvram'
+                @nvram = arg
             end
           end
           rescue
@@ -253,12 +273,22 @@ Vagrant.configure(2) do |config|
     libvirt.cpus = conf.cpus
     libvirt.uri = conf.libvirt_uri
     libvirt.kvm_hidden = true
+    
+    if (conf.uefi != nil && conf.uefi != "" && conf.nvram != nil && conf.nvram != "")
+        libvirt.loader =  conf.uefi
+        libvirt.nvram = conf.nvram
+        libvirt.machine_type = 'q35'
+    end
+    
     conf.gpu.each do |addr|
       libvirt.pci :domain => addr.domain, :bus => addr.bus, :slot => addr.slot, :function => addr.function 
     end
   end
   
-  config.vm.provision "ansible" do |ansible|
-    ansible.playbook = conf.poststartup_playbook
+  if (conf.poststartup_playbook != nil && conf.poststartup_playbook != "")
+    config.vm.provision "ansible" do |ansible|
+      ansible.playbook = conf.poststartup_playbook
+    end
   end
+  
 end

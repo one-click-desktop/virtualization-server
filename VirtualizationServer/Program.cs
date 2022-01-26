@@ -21,21 +21,27 @@ namespace OneClickDesktop.VirtualizationServer
 
         private static Semaphore exitSemaphore;
 
-        private static (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) ParseConfiguration(string configFolderPath)
+        private static ConfigurationCollection ParseConfiguration(string configFolderPath)
         {
             
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddIniFile(Path.Join(configFolderPath, "virtsrv.ini"))
                 .Build();
-
-
-            var virtSrvSection = config.GetSection("OneClickDesktop");
-            VirtSrvConfiguration systemConfig = virtSrvSection.Get<VirtSrvConfiguration>();
+            
+            VirtSrvConfiguration systemConfig = config.GetSection("OneClickDesktop").Get<VirtSrvConfiguration>() ?? new VirtSrvConfiguration();
+            NfsConfiguration nfsConf = config.GetSection("Nfs").Get<NfsConfiguration>() ?? new NfsConfiguration();
+            LdapConfiguration ldapConf = config.GetSection("Ldap").Get<LdapConfiguration>() ?? new LdapConfiguration();
             
             ResourcesConfiguration resourcesConfig = new ResourcesConfiguration(config, configFolderPath);
 
-            return (systemConfig, resourcesConfig);
+            return new ConfigurationCollection()
+            {
+                ResourceConfiguration = resourcesConfig,
+                VirtSrvConfiguration = systemConfig,
+                NfsConfiguration = nfsConf,
+                LdapConfiguration = ldapConf
+            };
         }
 
         static void Main(string[] args)
@@ -49,18 +55,17 @@ namespace OneClickDesktop.VirtualizationServer
             try
             {
                 //Wczytaj plik konfiguracyjny
-                (VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig) =
-                    ParseConfiguration(Path.GetFullPath(opts.ConfigurationFolderPath));
+                ConfigurationCollection configs = ParseConfiguration(Path.GetFullPath(opts.ConfigurationFolderPath));
 
                 //Wystartuj wszystkie potrzebne servicy
-                services = StartProcedure.InitializeVirtualizationServer(systemConfig, resourcesConfig);
+                services = StartProcedure.InitializeVirtualizationServer(configs);
 
                 if (services != null)
                 {
                     //Semafor mówiący czy trzeba zatrzymac server
                     exitSemaphore = new Semaphore(0, 1);
                     //Zarejestruj logikę prztwarzania wiadomości
-                    CommunicationLoop.RegisterReadingLogic(systemConfig, services, exitSemaphore);
+                    CommunicationLoop.RegisterReadingLogic(configs.VirtSrvConfiguration, services, exitSemaphore);
 
                     //Oczekuj na SIGINT
                     Console.CancelKeyPress += (sender, args) =>

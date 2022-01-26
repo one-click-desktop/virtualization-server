@@ -4,12 +4,49 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using OneClickDesktop.BackendClasses.Model.Resources;
+using OneClickDesktop.VirtualizationLibrary.Ansible;
 using OneClickDesktop.VirtualizationLibrary.Libvirt;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
 using OneClickDesktop.VirtualizationServer.Configuration;
 
 namespace OneClickDesktop.VirtualizationServer.Services
 {
+    public static class ParametersFactory
+    {
+        public static AnsibleParameters AnsibleFromConfiguration(NfsConfiguration nfsConf,
+            LdapConfiguration ldapConf)
+        {
+            return new AnsibleParameters(
+                ldapConf.Uri,
+                ldapConf.Domain,
+                ldapConf.ReadOnlyDn,
+                ldapConf.ReadOnlyPassword,
+                ldapConf.AdminDn,
+                ldapConf.GroupsDn,
+                ldapConf.UsersDn,
+                nfsConf.ServerName,
+                nfsConf.HomePath
+            );
+        }
+
+        public static VagrantParameters VagrantForMachine(string domainName, TemplateResources resource, VirtSrvConfiguration conf)
+        {
+            return new VagrantParameters
+            (
+                conf.VagrantboxUri,
+                domainName,
+                domainName,
+                conf.BridgeInterfaceName,
+                resource.Memory,
+                resource.CpuCores,
+                conf.PostStartupPlaybook,
+                conf.LibvirtUri,
+                conf.UefiPath,
+                conf.NvramPath
+            );
+        }
+    }
+    
     /// <summary>
     /// Klasa zarządza maszynami wirtualnymi działającymi pod pieczą systemu.
     /// </summary>
@@ -18,16 +55,20 @@ namespace OneClickDesktop.VirtualizationServer.Services
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private object vagrantLock = new object();
 
-        private VirtSrvConfiguration conf;
+        private VirtSrvConfiguration virtsrvConf;
+        private LdapConfiguration ldapConf;
+        private NfsConfiguration nfsConf;
         private LibvirtWrapper libvirt;
         private VagrantWrapper vagrant;
 
-        public VirtualizationManager(VirtSrvConfiguration conf)
+        public VirtualizationManager(VirtSrvConfiguration systemConfig, NfsConfiguration nfsConf, LdapConfiguration ldapConf)
         {
             logger.Info("Creating VirtualizationManager");
-            this.conf = conf;
-            libvirt = new LibvirtWrapper(conf.LibvirtUri);
-            vagrant = new VagrantWrapper(conf.VagrantFilePath);
+            this.virtsrvConf = systemConfig;
+            this.nfsConf = nfsConf;
+            this.ldapConf = ldapConf;
+            libvirt = new LibvirtWrapper(virtsrvConf.LibvirtUri);
+            vagrant = new VagrantWrapper(virtsrvConf.VagrantFilePath);
         }
 
         /// <summary>
@@ -52,29 +93,19 @@ namespace OneClickDesktop.VirtualizationServer.Services
 
             try
             {
-                VagrantParameters parameters = new VagrantParameters
-                (
-                    conf.VagrantboxUri,
-                    domainName,
-                    domainName,
-                    conf.BridgeInterfaceName,
-                    resource.Memory,
-                    resource.CpuCores,
-                    conf.PostStartupPlaybook,
-                    conf.LibvirtUri
-                );
-
+                AnsibleParameters aParams = ParametersFactory.AnsibleFromConfiguration(nfsConf, ldapConf);
+                VagrantParameters vParams = ParametersFactory.VagrantForMachine(domainName, resource, virtsrvConf);
                 if (attachedGPU != null && attachedGPU.PciIdentifiers.Count > 0)
-                    parameters.AddParameter(new GpuParameter(attachedGPU));
+                    vParams.AddParameter(new GpuParameter(attachedGPU));
 
                 lock (vagrantLock)
                 {
-                    vagrant.VagrantUp(parameters);
+                    vagrant.VagrantUp(vParams, aParams);
                 }
 
                 logger.Info("Vagrant up command finished");
 
-                IPNetwork bridgedNetwork = IPNetwork.Parse(conf.BridgedNetwork);
+                IPNetwork bridgedNetwork = IPNetwork.Parse(virtsrvConf.BridgedNetwork);
                 address = TryGetDomainAddress(domainName, bridgedNetwork, 20);
                 if (address == null)
                 {
@@ -82,7 +113,7 @@ namespace OneClickDesktop.VirtualizationServer.Services
                     {
                         logger.Warn(
                             $"Domain {domainName} doesn't have any address at network {bridgedNetwork}. Destroying.");
-                        vagrant.BestEffortVagrantDestroy(parameters);
+                        vagrant.BestEffortVagrantDestroy(vParams);
                     }
 
                     return false;
@@ -135,10 +166,10 @@ namespace OneClickDesktop.VirtualizationServer.Services
             {
                 VagrantParameters parameters = new VagrantParameters
                 (
-                    conf.VagrantboxUri,
+                    virtsrvConf.VagrantboxUri,
                     domainName,
                     domainName,
-                    conf.BridgeInterfaceName
+                    virtsrvConf.BridgeInterfaceName
                 );
                 lock (vagrantLock)
                 {

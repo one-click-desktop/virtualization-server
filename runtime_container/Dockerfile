@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/dotnet/runtime:5.0 AS base
 
-RUN apt-get update && apt-get install libvirt-dev build-essential ruby-dev curl python-dev python3-pip openssh-client -y
+RUN apt-get update && apt-get install libvirt-dev build-essential ruby-dev curl python-dev python3-pip openssh-client ovmf -y
 #https://4sysops.com/archives/how-to-deploy-ansible-inside-a-docker-container/#Content-bal-title
 RUN pip3 install --upgrade pip && \
   pip3 install --upgrade virtualenv && \
@@ -26,5 +26,6 @@ WORKDIR prerelease-gems-for-libvirt-nvram-support/
 RUN gem install ruby-libvirt-0.8.0.gem
 RUN gem install fog-libvirt-0.9.0.gem
 RUN gem install vagrant-libvirt-0.7.1.pre.27.gem
+RUN gem vagrant plugin install vagrant-libvirt-0.7.1.pre.27.gem
 
 ENTRYPOINT []
