@@ -8,13 +8,13 @@
           ansible.builtin.lineinfile:
             state: present
             path: /etc/openldap/ldap.conf
-            line: "URI ldap://192.168.100.160"#parametr
+            line: "URI {{ lookup('env','OCD_LDAP_URI') }}"
 
         - name: Append base
           ansible.builtin.lineinfile:
             state: present
             path: /etc/openldap/ldap.conf
-            line: "BASE dc=example,dc=org"#parametr
+            line: "BASE {{ lookup('env','OCD_DOMAIN') }}"
 
     - name: Modify /etc/nslcd.conf
       become: true
@@ -23,49 +23,49 @@
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "uri ldap://192.168.100.160"#parametr
+            line: "uri {{ lookup('env','OCD_LDAP_URI') }}"
 
         - name: Append base
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base dc=example,dc=org"#parametr
+            line: "base {{ lookup('env','OCD_DOMAIN') }}"
 
         - name: Append binddn
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "binddn cn=readonly,dc=example,dc=org"#parametr
+            line: "binddn {{ lookup('env','OCD_RODN') }}"
 
         - name: Append bindpw
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "bindpw readonly"#parametr
+            line: "bindpw {{ lookup('env','OCD_ROPW') }}"
 
         - name: Append rootpwmoddn
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "rootpwmoddn cn=admin,dc=example,dc=org"#parametr
+            line: "rootpwmoddn {{ lookup('env','OCD_ADMDN') }}"
 
         - name: Append base group
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base group ou=groups,dc=example,dc=org"#parametr
+            line: "base group {{ lookup('env','OCD_GRPDN') }}"
 
         - name: Append base passwd
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base passwd ou=users,dc=example,dc=org"#parametr
+            line: "base passwd {{ lookup('env','OCD_USRDN') }}"
 
         - name: Append base shadow
           ansible.builtin.lineinfile:
             state: present
             path: /etc/nslcd.conf
-            line: "base shadow ou=users,dc=example,dc=org"#parametr
+            line: "base shadow {{ lookup('env','OCD_USRDN') }}"
 
     - name: Restart nslcd service
       become: true
@@ -84,7 +84,7 @@
       become: true
       ansible.posix.mount:
         path: /home2
-        src: 192.168.100.160:/ #parametr
+        src: "{{ lookup('env','OCD_NFS_SRVNAME') }}:{{ lookup('env','OCD_NFS_HOME_PATH') }}"
         opts: rw,sync,hard,intr
         state: mounted
         fstype: nfs
