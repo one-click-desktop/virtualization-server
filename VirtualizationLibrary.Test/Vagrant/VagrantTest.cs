@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using NUnit.Framework;
+using OneClickDesktop.VirtualizationLibrary.Ansible;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
 
 namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
@@ -19,13 +20,14 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
         private VagrantWrapper wrap;
         private LibvirtHelper helper;
         private string testBridgeDevice;
-        
+        private string libvirtUri = "qemu:///system";
+
         [SetUp]
         public void SetupWrapper()
         {
             //Zmienić przed uruchomieniem na nowym komputerze! (Czy jakiś bridge na pewno istnieje?)
             testBridgeDevice = "br0";
-            string libvirtUri = "qemu:///system";
+
             helper = new LibvirtHelper(libvirtUri);
             wrap = new VagrantWrapper("res/Vagrantfile");
         }
@@ -34,80 +36,85 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
         {
             helper.Dispose();
         }
-        
+
         [Test]
         public void CreateSimpleAlpine()
         {
-            var para = VagrantParametersGenerator.SimpleCreatableAlpine(MethodBase.GetCurrentMethod().Name, testBridgeDevice);
-            
+            var para = VagrantParametersGenerator.SimpleCreatableAlpine(MethodBase.GetCurrentMethod().Name,
+                testBridgeDevice, libvirtUri);
+
             //Create machine
-            wrap.VagrantUp(para);
+            wrap.VagrantUp(para, new AnsibleParameters());
 
             //Check if exists
             Assert.IsTrue(helper.IsRunningVm(para.GetParameterValue(typeof(NameParameter))));
 
             //Cleanup
             wrap.VagrantDestroy(para);
-            
+
             //Check if doesnt exist
             Assert.IsFalse(helper.Exists(para.GetParameterValue(typeof(NameParameter))));
         }
-        
+
         [Test]
         public void CreateBadnameAlpine()
         {
-            var para = VagrantParametersGenerator.SimpleBadNameAlpine(MethodBase.GetCurrentMethod().Name, testBridgeDevice);
-            
+            var para = VagrantParametersGenerator.SimpleBadNameAlpine(MethodBase.GetCurrentMethod().Name,
+                testBridgeDevice, libvirtUri);
+
             //Create machine
-            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
+            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para, new AnsibleParameters()));
 
             //Check if doesnt exist
             Assert.IsFalse(helper.Exists(para.GetParameterValue(typeof(NameParameter))));
         }
-        
+
         [Test]
         public void CreateCpuHungryAlpine()
         {
-            var para = VagrantParametersGenerator.SimpleCPUHungryAlpine(MethodBase.GetCurrentMethod().Name, testBridgeDevice);
-            
+            var para = VagrantParametersGenerator.SimpleCPUHungryAlpine(MethodBase.GetCurrentMethod().Name,
+                testBridgeDevice, libvirtUri);
+
             //Create machine
-            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
+            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para, new AnsibleParameters()));
 
             //Check if doesnt exist
             Assert.IsFalse(helper.Exists(para.GetParameterValue(typeof(NameParameter))));
         }
-        
+
         [Test]
         public void CreateMemoryHungryAlpine()
         {
-            var para = VagrantParametersGenerator.SimpleMemoryHungryAlpine(MethodBase.GetCurrentMethod().Name, testBridgeDevice);
-            
+            var para = VagrantParametersGenerator.SimpleMemoryHungryAlpine(MethodBase.GetCurrentMethod().Name,
+                testBridgeDevice, libvirtUri);
+
             //Create machine
-            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
+            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para, new AnsibleParameters()));
 
             //Check if doesnt exist
             Assert.IsFalse(helper.Exists(para.GetParameterValue(typeof(NameParameter))));
         }
-        
+
         [Test]
         public void CreateUnexistingBox()
         {
-            var para = VagrantParametersGenerator.UnexistingBox(MethodBase.GetCurrentMethod().Name, testBridgeDevice);
-            
+            var para = VagrantParametersGenerator.UnexistingBox(MethodBase.GetCurrentMethod().Name, testBridgeDevice, libvirtUri);
+
             //Create machine
-            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
+            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para, new AnsibleParameters()));
 
             //Check if doesnt exist
             Assert.IsFalse(helper.Exists(para.GetParameterValue(typeof(NameParameter))));
         }
-        
+
         [Test]
         public void CreateBoxWithUnexistingBridge()
         {
-            var para = VagrantParametersGenerator.SimpleCreatableAlpine(MethodBase.GetCurrentMethod().Name, "ijgsahdfiuqgfyuwkegfouwafbsuhafiw");
-            
+            var para = VagrantParametersGenerator.SimpleCreatableAlpine(MethodBase.GetCurrentMethod().Name,
+                "ijgsahdfiuqgfyuwkegfouwafbsuhafiw", libvirtUri);
+
             //Create machine
-            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para));
+            Assert.Catch<VagrantException>(() => wrap.VagrantUp(para, new AnsibleParameters()));
 
             //Check if doesnt exist
             Assert.IsFalse(helper.Exists(para.GetParameterValue(typeof(NameParameter))));

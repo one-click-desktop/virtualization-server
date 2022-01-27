@@ -103,7 +103,7 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
                         d.Item2.Memory,
                         d.Item2.Cpus,
                         d.Item2.Storage,
-                        false)
+                        d.Item2.AttachGPU)
                 );
         }
     }

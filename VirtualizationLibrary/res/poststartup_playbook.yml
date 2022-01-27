@@ -1,7 +1,90 @@
 ---
 - hosts: all
   tasks:
-    - name: Create file to proof poststratup playbook working
+    - name: Modify /etc/openldap/ldap.conf
+      become: true
+      block:
+        - name: Append uri
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/openldap/ldap.conf
+            line: "URI {{ lookup('env','OCD_LDAP_URI') }}"
+
+        - name: Append base
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/openldap/ldap.conf
+            line: "BASE {{ lookup('env','OCD_LDAP_DOMAIN') }}"
+
+    - name: Modify /etc/nslcd.conf
+      become: true
+      block:
+        - name: Append uri
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "uri {{ lookup('env','OCD_LDAP_URI') }}"
+
+        - name: Append base
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base {{ lookup('env','OCD_LDAP_DOMAIN') }}"
+
+        - name: Append binddn
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "binddn {{ lookup('env','OCD_LDAP_RODN') }}"
+
+        - name: Append bindpw
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "bindpw {{ lookup('env','OCD_LDAP_ROPW') }}"
+
+        - name: Append rootpwmoddn
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "rootpwmoddn {{ lookup('env','OCD_LDAP_ADMDN') }}"
+
+        - name: Append base group
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base group {{ lookup('env','OCD_LDAP_GRPDN') }}"
+
+        - name: Append base passwd
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base passwd {{ lookup('env','OCD_LDAP_USRDN') }}"
+
+        - name: Append base shadow
+          ansible.builtin.lineinfile:
+            state: present
+            path: /etc/nslcd.conf
+            line: "base shadow {{ lookup('env','OCD_LDAP_USRDN') }}"
+
+    - name: Restart nslcd service
+      become: true
+      ansible.builtin.systemd:
+        state: restarted
+        name: nslcd.service
+
+    - name: Create common home2 directory
+      become: true
       ansible.builtin.file:
-        path: /home/vagrant/Desktop/poststartup_file
-        state: 'touch'
+        path: /home2 
+        state: directory
+        mode: '0755'
+
+    - name: Mount home folders
+      become: true
+      ansible.posix.mount:
+        path: /home2
+        src: "{{ lookup('env','OCD_NFS_SRVNAME') }}:{{ lookup('env','OCD_NFS_HOME_PATH') }}"
+        opts: rw,sync,hard,intr
+        state: mounted
+        fstype: nfs

@@ -29,6 +29,15 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// </summary>
         public string VagrantboxUri { get; set; } = null;
         /// <summary>
+        /// Path on host machine to UEFI image used to build vagrantbox.
+        /// </summary>
+        public string UefiPath { get; set; } = null;
+        /// <summary>
+        /// Path (inside container) to NVRAM image used on box building.
+        /// It will be copied to volume connected with host at /var/lib/libvirt/qemu/nvram/ to run machine.
+        /// </summary>
+        public string NvramPath { get; set; } = null;
+        /// <summary>
         /// Bridge interface name for virtual machines
         /// </summary>
         public string BridgeInterfaceName { get; set; } = "br0";
@@ -64,6 +73,6 @@ namespace OneClickDesktop.VirtualizationServer.Configuration
         /// <summary>
         /// Path to playbook provisioning machine after startup.
         /// </summary>
-        public string PostStartupPlaybook { get; set; } = "res/poststartup_playbook.yml";
+        public string PostStartupPlaybook { get; set; } = "";
     }
 }

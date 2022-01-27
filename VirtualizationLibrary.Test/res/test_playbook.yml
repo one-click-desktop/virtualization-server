@@ -1,0 +1,6 @@
+---
+group: all
+task:
+  - name: test playbook
+    ansible.buildin.file
+    

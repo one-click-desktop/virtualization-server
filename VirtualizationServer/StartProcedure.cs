@@ -25,9 +25,9 @@ namespace OneClickDesktop.VirtualizationServer
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         
-        private static VirtualizationManager PrepareVirtualizationManager(VirtSrvConfiguration systemConfig)
+        private static VirtualizationManager PrepareVirtualizationManager(VirtSrvConfiguration systemConfig, NfsConfiguration nsfConf, LdapConfiguration ldapConf)
         {
-            return new VirtualizationManager(systemConfig);
+            return new VirtualizationManager(systemConfig, nsfConf, ldapConf);
         }
         
         private static ModelManager PrepareModelManager(string directQueueName, ResourcesConfiguration resourcesConfig)
@@ -57,17 +57,17 @@ namespace OneClickDesktop.VirtualizationServer
                 systemConfig.ClientHeartbeatChecksForMissing);
         }
 
-        public static RunningServices InitializeVirtualizationServer(VirtSrvConfiguration systemConfig, ResourcesConfiguration resourcesConfig)
+        public static RunningServices InitializeVirtualizationServer(ConfigurationCollection confCollection)
         {
             logger.Info("Initializing Virtualization Server");
             
             RunningServices res = new RunningServices();
             try
             {
-                res.VirtualizationManager = PrepareVirtualizationManager(systemConfig);
-                res.OverseersCommunication = PrepareOverseersCommunication(systemConfig);
-                res.ClientHeartbeat = PrepareClientHeartbeat(systemConfig);
-                res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, resourcesConfig);
+                res.VirtualizationManager = PrepareVirtualizationManager(confCollection.VirtSrvConfiguration, confCollection.NfsConfiguration, confCollection.LdapConfiguration);
+                res.OverseersCommunication = PrepareOverseersCommunication(confCollection.VirtSrvConfiguration);
+                res.ClientHeartbeat = PrepareClientHeartbeat(confCollection.VirtSrvConfiguration);
+                res.ModelManager = PrepareModelManager(res.OverseersCommunication.DirectQueueName, confCollection.ResourceConfiguration);
 
                 logger.Info("First time brodcast model to overseers");
                 res.OverseersCommunication.ReportModel(res.ModelManager.GetReport());

@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using NUnit.Framework;
+using OneClickDesktop.VirtualizationLibrary.Ansible;
 using OneClickDesktop.VirtualizationLibrary.Libvirt;
 using OneClickDesktop.VirtualizationLibrary.Test.Vagrant;
 using OneClickDesktop.VirtualizationLibrary.Vagrant;
@@ -14,11 +15,12 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
         private LibvirtHelper helper;
         private VagrantWrapper vagrant;
         private const string bridge = "br0";
+        private string libvirtUri = "qemu:///system";
 
         [SetUp]
         public void SetUp()
         {
-            string libvirtUri = "qemu:///system";
+            
             string vagrantPath = "res/Vagrantfile";
             wrapper = new LibvirtWrapper(libvirtUri);
             helper = new LibvirtHelper(libvirtUri);
@@ -58,12 +60,12 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Libvirt
         public void GetAddressesWithBridgeBooted()
         {
             string name = MethodBase.GetCurrentMethod().Name;
-            vagrant.VagrantUp(VagrantParametersGenerator.SimpleCreatableAlpine(name, bridge));
+            vagrant.VagrantUp(VagrantParametersGenerator.SimpleCreatableAlpine(name, bridge, libvirtUri), new AnsibleParameters());
 
             Assert.That(wrapper.DoesDomainActive(name), Is.True);
             Assume.That(wrapper.GetDomainsNetworkAddresses(name)?.Count(), Is.EqualTo(5));
 
-            vagrant.VagrantDestroy(VagrantParametersGenerator.SimpleCreatableAlpine(name, bridge));
+            vagrant.VagrantDestroy(VagrantParametersGenerator.SimpleCreatableAlpine(name, bridge, libvirtUri));
             
             Assert.That(wrapper.DoesDomainExist(name), Is.False);
             Assume.That(wrapper.GetDomainsNetworkAddresses(name)?.Count(), Is.Null);

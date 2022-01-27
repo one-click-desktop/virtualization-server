@@ -18,7 +18,9 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             string bridge = "br0";
             string libvirtUri = "test:///default";
             string playbook = "test/playbook.yml";
-            var p = new VagrantParameters(box, vm_name, hostname, bridge, memory, cpus, playbook, libvirtUri);
+            string uefi = "eufi/path";
+            string nvram = "nvram/path";
+            var p = new VagrantParameters(box, vm_name, hostname, bridge, memory, cpus, playbook, libvirtUri, uefi, nvram);
 
             StringDictionary env = new StringDictionary();
             env.Add("TEST", "TEST");
@@ -32,6 +34,8 @@ namespace OneClickDesktop.VirtualizationLibrary.Test.Vagrant
             StringAssert.AreEqualIgnoringCase(bridge, env["OCD_BRIDGE"]);
             StringAssert.AreEqualIgnoringCase(libvirtUri, env["OCD_LIBVIRT_URI"]);
             StringAssert.AreEqualIgnoringCase(playbook, env["OCD_POSTSTARTUP_PLAYBOOK"]);
+            StringAssert.AreEqualIgnoringCase(nvram, env["OCD_NVRAM"]);
+            StringAssert.AreEqualIgnoringCase(uefi, env["OCD_UEFI"]);
             StringAssert.AreEqualIgnoringCase("TEST", env["TEST"]);
         }
     }
